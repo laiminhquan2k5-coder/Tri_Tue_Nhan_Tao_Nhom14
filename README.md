@@ -31,8 +31,8 @@ streamlit run app/streamlit_app.py
 Accuracy, F1-score...
 
 ## Thành viên nhóm
-Đỗ Xuân Quang	- 26A4042133
-Phùng Gia Bảo	- 26A4041215
-Lại Minh Quân	- 26A4042135
-Phạm Bảo Ngọc	- 25A4043329
-Hoàng Thị Minh - 26A4041646
+- Đỗ Xuân Quang	- 26A4042133
+- Phùng Gia Bảo	- 26A4041215
+- Lại Minh Quân	- 26A4042135
+- Phạm Bảo Ngọc	- 25A4043329
+- Hoàng Thị Minh - 26A4041646
