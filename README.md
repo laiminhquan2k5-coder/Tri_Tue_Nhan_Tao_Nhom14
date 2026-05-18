@@ -2,34 +2,19 @@
 # Vietnamese Sentiment Analysis using ViSoBERT
 
 ## Giới thiệu
-Mô tả bài toán.
+Mô tả bài toán...
 
 ## Dataset
-Nguồn dữ liệu.
+- Shoes_Test_Data
+- Shoes_Train_Data
+- Shoes_Validate_Data
 
 ## Công nghệ sử dụng
 - Python
 - PyTorch
 - Transformers
 - Streamlit
-
-## Pipeline
-Input → Preprocessing → ViSoBERT → Prediction
-
-## Cách chạy project
-
-### Cài thư viện
-pip install -r requirements.txt
-
-### Train model
-python src/models/train_visobert.py
-
-### Run demo
-streamlit run app/streamlit_app.py
-
-## Kết quả
-Accuracy, F1-score...
-
+  
 ## Thành viên nhóm
 - Đỗ Xuân Quang	- 26A4042133
 - Phùng Gia Bảo	- 26A4041215
