@@ -31,11 +31,17 @@ LABEL_COLS = ['Price', 'Shipping', 'Outlook', 'Quality', 'Size', 'Shop_Service',
 
 def load_data(data_dir="."):
     """Đọc và gộp 3 file Excel (Train, Test, Validate) thành 1 DataFrame."""
+    # Tìm file trong data_dir hoặc data_dir/Data
+    search_dirs = [data_dir, os.path.join(data_dir, "Data")]
     dfs = []
     for f in ['Shoes_Train_Data.xlsx', 'Shoes_Test_Data.xlsx', 'Shoes_Validate_Data.xlsx']:
-        path = os.path.join(data_dir, f)
-        if os.path.exists(path):
-            dfs.append(pd.read_excel(path))
+        for d in search_dirs:
+            path = os.path.join(d, f)
+            if os.path.exists(path):
+                dfs.append(pd.read_excel(path))
+                break
+    if not dfs:
+        raise FileNotFoundError(f"Không tìm thấy file dữ liệu trong: {search_dirs}")
     return pd.concat(dfs, ignore_index=True)
 
 
