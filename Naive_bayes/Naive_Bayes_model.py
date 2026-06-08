@@ -6,7 +6,7 @@ Mô hình Baseline sử dụng MultinomialNB với TfidfVectorizer / CountVector
 
 Dữ liệu đầu vào: Các file CSV đã tiền xử lý (Shoes_*_Preprocessed.csv)
 Nhãn cảm xúc tổng thể được tổng hợp từ 8 nhãn khía cạnh:
-  - -1: Không liên quan  →  bỏ qua
+  - -1: Tiêu cực        →  Negative
   -  0: Trung tính       →  Neutral
   -  1: Tích cực         →  Positive
   -  2: Rất tích cực     →  Very Positive
@@ -51,9 +51,9 @@ PREPROCESSED_FILES = {
 
 ASPECT_COLS = ["Price", "Shipping", "Outlook", "Quality", "Size", "Shop_Service", "General", "Others"]
 
-# Nhãn cảm xúc tổng thể
-SENTIMENT_MAP = {0: "Neutral", 1: "Positive", 2: "Very Positive"}
-SENTIMENT_LABELS = ["Neutral", "Positive", "Very Positive"]
+# Nhãn cảm xúc tổng thể (4 lớp)
+SENTIMENT_MAP = {0: "Negative", 1: "Neutral", 2: "Positive", 3: "Very Positive"}
+SENTIMENT_LABELS = ["Negative", "Neutral", "Positive", "Very Positive"]
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -81,32 +81,38 @@ def create_overall_sentiment(df, aspect_cols=ASPECT_COLS):
     """
     Tạo nhãn cảm xúc tổng thể từ 8 nhãn khía cạnh.
     
-    Quy tắc: Lấy giá trị lớn nhất trong các nhãn có liên quan (≠ -1).
-      - max = 0 → Neutral
-      - max = 1 → Positive  
-      - max = 2 → Very Positive
+    Quy tắc mới (4 lớp):
+      - -1 → 0 (Negative / Tiêu cực)
+      -  0 → 1 (Neutral / Trung tính)
+      -  1 → 2 (Positive / Tích cực)
+      -  2 → 3 (Very Positive / Rất tích cực)
     
-    Nếu tất cả nhãn đều -1 (không liên quan), đánh dấu là -1 và loại bỏ.
+    Nhãn tổng thể được tính bằng trung bình tất cả giá trị khía cạnh
+    (đã ánh xạ -1→0), sau đó rời rạc hóa:
+      - mean < 0.3  → Negative
+      - mean < 0.6  → Neutral
+      - mean < 1.0  → Positive
+      - mean >= 1.0 → Very Positive
     """
     df = df.copy()
     
-    # Lấy giá trị lớn nhất trong các cột khía cạnh (bỏ qua -1)
-    def get_max_sentiment(row):
-        relevant_vals = [v for v in row[aspect_cols].values if v != -1]
-        if not relevant_vals:
-            return -1  # không có nhãn liên quan
-        return max(relevant_vals)
+    # Ánh xạ: -1→0(Negative), 0→1(Neutral), 1→2(Positive), 2→3(Very Positive)
+    MAPPING = {-1: 0, 0: 1, 1: 2, 2: 3}
     
-    df["Sentiment"] = df.apply(get_max_sentiment, axis=1)
+    mapped = df[aspect_cols].replace(MAPPING)
+    means = mapped.mean(axis=1)
     
-    # Loại bỏ dòng không có nhãn liên quan
-    n_before = len(df)
-    df = df[df["Sentiment"] != -1].copy()
-    n_after = len(df)
-    n_removed = n_before - n_after
+    def discretize(val):
+        if val < 0.3:
+            return 0  # Negative
+        elif val < 0.6:
+            return 1  # Neutral
+        elif val < 1.0:
+            return 2  # Positive
+        else:
+            return 3  # Very Positive
     
-    if n_removed > 0:
-        print(f"     Loại bỏ {n_removed} dòng không có nhãn liên quan (tất cả = -1)")
+    df["Sentiment"] = means.apply(discretize)
     
     return df
 
@@ -178,7 +184,7 @@ def evaluate_model(pipeline, X_test, y_test, model_name="Model"):
     prec = precision_score(y_test, y_pred, average="weighted", zero_division=0)
     rec = recall_score(y_test, y_pred, average="weighted", zero_division=0)
     f1 = f1_score(y_test, y_pred, average="weighted", zero_division=0)
-    cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2])
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2, 3])
     report = classification_report(
         y_test, y_pred,
         target_names=SENTIMENT_LABELS,
@@ -352,7 +358,7 @@ def plot_sentiment_distribution(y_series, title, save_path=None):
     labels = [SENTIMENT_MAP.get(k, str(k)) for k in counts.index]
     
     fig, ax = plt.subplots(figsize=(8, 5))
-    colors = ["#9E9E9E", "#4CAF50", "#2196F3"]
+    colors = ["#EF4444", "#9E9E9E", "#4CAF50", "#2196F3"]
     bars = ax.bar(labels, counts.values, color=colors[:len(labels)], edgecolor="white", linewidth=1.5)
     
     for bar, val in zip(bars, counts.values):
@@ -477,7 +483,7 @@ def main():
     print(f"  ║  🏷️ BƯỚC 2: TẠO NHÃN CẢM XÚC TỔNG THỂ{' ' * (W - 44)}║")
     print(f"  ╚{'═' * W}╝")
 
-    emoji_map = {"Neutral": "😐", "Positive": "😊", "Very Positive": "🤩"}
+    emoji_map = {"Negative": "😞", "Neutral": "😐", "Positive": "😊", "Very Positive": "🤩"}
     for name, df in data.items():
         print(f"\n  📂 {name}:")
         data[name] = create_overall_sentiment(df)
@@ -668,7 +674,7 @@ def main():
         label = SENTIMENT_MAP.get(pred, str(pred))
 
         # Chọn emoji theo cảm xúc
-        emoji_map = {"Neutral": "😐", "Positive": "😊", "Very Positive": "🤩"}
+        emoji_map = {"Negative": "😞", "Neutral": "😐", "Positive": "😊", "Very Positive": "🤩"}
         sent_emoji = emoji_map.get(label, "❓")
 
         print(f"\n  ┌{'─' * W}┐")

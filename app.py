@@ -25,118 +25,188 @@ st.set_page_config(
 )
 
 # ═══════════════════════════════════════════════════════════════════════
-# CSS TUỲ BIẾN — GIAO DIỆN HIỆN ĐẠI
+# CSS TUỲ BIẾN — GIAO DIỆN HIỆN ĐẠI v2
 # ═══════════════════════════════════════════════════════════════════════
 
 st.markdown("""
 <style>
+/* ── Import font ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── Global ── */
+html, body, [class*="stApp"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
 /* ── Gradient Header ── */
 .header-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem 2rem 1.5rem 2rem;
-    border-radius: 0 0 1.5rem 1.5rem;
-    margin: -1rem -1rem 1.5rem -1rem;
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 40%, #2dd4bf 100%);
+    padding: 2.5rem 2rem 2rem 2rem;
+    border-radius: 0 0 2rem 2rem;
+    margin: -2rem -2rem 2rem -2rem;
     color: white;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(13, 148, 136, 0.25);
+.header-gradient::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+    animation: headerShimmer 8s ease-in-out infinite;
+}
+@keyframes headerShimmer {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(5%, 5%); }
 }
 .header-gradient h1 {
     color: white !important;
-    font-size: 2.5rem !important;
+    font-size: 2.8rem !important;
     font-weight: 800 !important;
-    margin-bottom: 0.3rem !important;
-    letter-spacing: -0.5px;
+    margin-bottom: 0.4rem !important;
+    letter-spacing: -1px;
+    position: relative;
 }
 .header-gradient p {
-    color: rgba(255,255,255,0.9) !important;
-    font-size: 1.1rem !important;
+    color: rgba(255,255,255,0.88) !important;
+    font-size: 1.05rem !important;
     margin-top: 0 !important;
+    position: relative;
 }
 
-/* ── Card chung ── */
+/* ── Card chung (glassmorphism) ── */
 .card {
-    background: #ffffff;
-    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 1.2rem;
     padding: 1.5rem;
-    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.10);
-    border: 1px solid #f0f0f5;
+    box-shadow: 0 4px 24px rgba(13, 148, 136, 0.07);
+    border: 1px solid rgba(240, 253, 250, 0.8);
     margin-bottom: 1rem;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+.card:hover {
+    box-shadow: 0 8px 32px rgba(13, 148, 136, 0.12);
 }
 .card h3 {
     margin-top: 0 !important;
-    color: #4a4a6a;
+    color: #374151;
     font-weight: 700;
+    font-size: 1.1rem;
 }
 
 /* ── Card kết quả chính (gradient) ── */
 .result-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 1rem;
-    padding: 2rem;
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 40%, #2dd4bf 100%);
+    border-radius: 1.5rem;
+    padding: 2.5rem 2rem;
     color: white;
     text-align: center;
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.30);
+    box-shadow: 0 8px 40px rgba(13, 148, 136, 0.30);
     margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+.result-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
 }
 .result-card h2 {
     color: white !important;
-    font-size: 2rem !important;
+    font-size: 2.2rem !important;
     font-weight: 800 !important;
     margin-bottom: 0.2rem !important;
+    position: relative;
 }
 .result-card .confidence {
-    font-size: 1.2rem;
-    opacity: 0.9;
+    font-size: 1.15rem;
+    opacity: 0.92;
+    position: relative;
 }
 .result-card .emoji-big {
-    font-size: 3.5rem;
-    margin-bottom: 0.3rem;
+    font-size: 4rem;
+    margin-bottom: 0.4rem;
+    position: relative;
 }
 
 /* ── Stat card ── */
 .stat-card {
-    background: #f8f9ff;
-    border-radius: 0.8rem;
-    padding: 1rem;
+    background: linear-gradient(135deg, #f0fdfa 0%, #e6f7f5 100%);
+    border-radius: 1rem;
+    padding: 1.2rem 1rem;
     text-align: center;
-    border: 1px solid #e8e8f0;
+    border: 1px solid rgba(13, 148, 136, 0.1);
+    transition: transform 0.2s ease;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
 }
 .stat-card .stat-value {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 800;
-    color: #667eea;
+    color: #0d9488;
+    line-height: 1.2;
 }
 .stat-card .stat-label {
-    font-size: 0.85rem;
-    color: #888;
-    margin-top: 0.2rem;
+    font-size: 0.82rem;
+    color: #6b7280;
+    margin-top: 0.3rem;
+    font-weight: 500;
 }
 
 /* ── Sidebar ── */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #f8f9ff 0%, #eeeef8 100%);
+    background: linear-gradient(180deg, #f7fdfb 0%, #edf5f3 100%);
+    border-right: 1px solid rgba(13, 148, 136, 0.08);
 }
 section[data-testid="stSidebar"] .sidebar-title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #4a4a6a;
+    color: #374151;
     margin-bottom: 0.5rem;
 }
 
 /* ── Nút phân tích ── */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%) !important;
     color: white !important;
     border: none !important;
-    border-radius: 0.7rem !important;
-    font-weight: 600 !important;
+    border-radius: 0.8rem !important;
+    font-weight: 700 !important;
     font-size: 1rem !important;
-    padding: 0.6rem 2rem !important;
+    padding: 0.75rem 2rem !important;
     width: 100%;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
+    letter-spacing: 0.3px;
 }
 .stButton > button[kind="primary"]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(13, 148, 136, 0.45);
+}
+.stButton > button[kind="primary"]:active {
+    transform: translateY(-1px);
+}
+
+/* ── Nút download ── */
+.stDownloadButton > button {
+    border-radius: 0.8rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease;
+}
+.stDownloadButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 /* ── Ẩn streamlit branding ── */
@@ -145,43 +215,216 @@ footer {visibility: hidden;}
 header {visibility: hidden;}
 
 /* ── Dataframe đẹp ── */
-.dataframe { border-radius: 0.5rem !important; }
+.dataframe {
+    border-radius: 0.8rem !important;
+    border: 1px solid #e5e7eb !important;
+}
 
 /* ── Tag nhãn cảm xúc ── */
 .sentiment-tag {
     display: inline-block;
-    padding: 0.3rem 0.8rem;
+    padding: 0.35rem 1rem;
     border-radius: 2rem;
     font-weight: 600;
     font-size: 0.85rem;
-    margin: 0.15rem;
+    margin: 0.2rem;
+    letter-spacing: 0.3px;
 }
-.tag-neutral { background: #e0e0e0; color: #555; }
-.tag-positive { background: #c8e6c9; color: #2e7d32; }
-.tag-very-positive { background: #bbdefb; color: #1565c0; }
+.tag-neutral { background: #e5e7eb; color: #4b5563; }
+.tag-positive { background: #d1fae5; color: #065f46; }
+.tag-very-positive { background: #dbeafe; color: #1e40af; }
 
 /* ── History item ── */
 .history-item {
-    background: #f8f9ff;
-    border-radius: 0.5rem;
-    padding: 0.6rem 0.8rem;
-    margin-bottom: 0.4rem;
-    border-left: 3px solid #667eea;
+    background: linear-gradient(135deg, #f7fdfb 0%, #edf8f5 100%);
+    border-radius: 0.8rem;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.5rem;
+    border-left: 4px solid #14b8a6;
+    font-size: 0.88rem;
+    transition: transform 0.15s ease;
+}
+.history-item:hover {
+    transform: translateX(4px);
+}
+
+/* ── Progress bar đẹp hơn ── */
+.prog-bar-track {
+    background: #f3f4f6;
+    border-radius: 1rem;
+    overflow: hidden;
+    height: 0.65rem;
+    margin: 0.3rem 0 0.15rem 0;
+}
+.prog-bar-fill {
+    height: 100%;
+    border-radius: 1rem;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Tabs styling ── */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background: #f0fdfa;
+    border-radius: 1rem;
+    padding: 6px;
+}
+.stTabs [data-baseweb="tab"] {
+    border-radius: 0.7rem;
+    padding: 10px 20px;
+    font-weight: 600;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
+    color: white !important;
+    box-shadow: 0 2px 12px rgba(13, 148, 136, 0.3);
+}
+
+/* ── Text area ── */
+.stTextArea textarea {
+    border-radius: 0.8rem !important;
+    border: 2px solid #e5e7eb !important;
+    transition: border-color 0.2s ease;
+}
+.stTextArea textarea:focus {
+    border-color: #14b8a6 !important;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1) !important;
+}
+
+/* ── Expander ── */
+.streamlit-expanderHeader {
+    border-radius: 0.8rem !important;
+    font-weight: 600 !important;
+}
+
+/* ── File uploader ── */
+.stFileUploader {
+    border: 2px dashed #d1d5db;
+    border-radius: 1rem;
+    transition: border-color 0.2s ease;
+}
+.stFileUploader:hover {
+    border-color: #14b8a6;
+}
+
+/* ── Section divider ── */
+.section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d1d5db, transparent);
+    margin: 2rem 0;
+    border: none;
+}
+
+/* ── Footer ── */
+.footer-text {
+    text-align: center;
+    color: #9ca3af;
     font-size: 0.85rem;
+    padding: 1.5rem 0;
+}
+
+/* ── Aspect badge ── */
+.aspect-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #f0fdfa, #e0f2f1);
+    color: #0d9488;
+    padding: 0.25rem 0.7rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin: 0.15rem;
+    border: 1px solid rgba(13, 148, 136, 0.15);
+}
+
+/* ── Empty state ── */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #9ca3af;
+}
+.empty-state .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+.empty-state .empty-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+/* ── Spinner ── */
+.stSpinner > div {
+    border-color: #14b8a6 transparent transparent transparent !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════
+# CẤU HÌNH MÔ HÌNH — Thay đổi linh hoạt tại đây
+# ═══════════════════════════════════════════════════════════════════════
+#
+# CÁCH SỬ DỤNG:
+#
+# 1) Đổi mô hình khác — sửa MODEL_INFO:
+#      MODEL_INFO = {
+#          "name": "ViSoBERT",
+#          "description": "uitnlp/visobert + Softmax Classifier",
+#          "details": "Mô hình transformer tiếng Việt fine-tune cho phân loại cảm xúc.",
+#      }
+#
+# 2) Bỏ hoàn toàn phần "Về mô hình" — đặt:
+#      MODEL_INFO = None
+#
+# 3) Thêm / xóa bước pipeline — sửa MODEL_PIPELINE_STEPS:
+#      MODEL_PIPELINE_STEPS = [
+#          "Lowercase",
+#          "Remove punctuation",
+#          "Tokenization ViSoBERT",   # thêm bước mới
+#      ]
+#    Hoặc để rỗng nếu không hiển thị: MODEL_PIPELINE_STEPS = []
+#
+# 4) Thêm nội dung tùy chỉnh — thêm key "extra" vào MODEL_INFO:
+#      MODEL_INFO = {
+#          "name": "SVM",
+#          "description": "TF-IDF + LinearSVC",
+#          "details": "Hỗ trợ vector machine tuyến tính.",
+#          "extra": "Độ chính xác validation: 92.3%",
+#      }
+# ═══════════════════════════════════════════════════════════════════════
+
+MODEL_INFO = {
+    "name": "ViSoBERT",
+    "description": "uitnlp/visobert",
+    "details": "Mô hình ngôn ngữ tiếng Việt dựa trên BERT, chuyên biệt cho phân tích cảm xúc.",
+}
+
+MODEL_PIPELINE_STEPS = [
+    "Lowercase",
+    "Remove punctuation",
+    "Remove URL",
+    "Remove emoji",
+    "Chuẩn hóa teencode",
+    "Tokenization ViSoBERT",
+    "Padding sequence",
+    "Attention Mask",
+]
+
+# ═══════════════════════════════════════════════════════════════════════
 # HẰNG SỐ & CẤU HÌNH
 # ═══════════════════════════════════════════════════════════════════════
 
-SENTIMENT_MAP = {0: "Neutral", 1: "Positive", 2: "Very Positive"}
-SENTIMENT_EMOJI = {0: "😐", 1: "😊", 2: "🤩"}
-SENTIMENT_COLOR = {0: "#9E9E9E", 1: "#4CAF50", 2: "#2196F3"}
-SENTIMENT_VN = {0: "Trung tính", 1: "Tích cực", 2: "Rất tích cực"}
+SENTIMENT_MAP = {0: "Negative", 1: "Neutral", 2: "Positive", 3: "Very Positive"}
+SENTIMENT_EMOJI = {0: "😞", 1: "😐", 2: "😊", 3: "🤩"}
+SENTIMENT_COLOR = {0: "#ef4444", 1: "#94a3b8", 2: "#10b981", 3: "#0ea5e9"}
+SENTIMENT_VN = {0: "Tiêu cực", 1: "Trung tính", 2: "Tích cực", 3: "Rất tích cực"}
 
 ASPECT_COLS = ["Price", "Shipping", "Outlook", "Quality", "Size", "Shop_Service", "General", "Others"]
+ASPECT_VN = {
+    "Price": "Giá cả", "Shipping": "Vận chuyển", "Outlook": "Ngoại hình",
+    "Quality": "Chất lượng", "Size": "Kích cỡ", "Shop_Service": "Dịch vụ",
+    "General": "Chung", "Others": "Khác",
+}
 
 # ═══════════════════════════════════════════════════════════════════════
 # TIỀN XỬ LÝ VĂN BẢN (tái sử dụng từ pipeline)
@@ -240,16 +483,11 @@ def preprocess_text(text):
     """Tiền xử lý văn bản đầu vào tương tự pipeline."""
     if not isinstance(text, str) or not text.strip():
         return ""
-    # 1. Lowercase
     text = text.lower()
-    # 2. Remove punctuation (giữ lại , . ! ? ; : - ( ))
     text = text.translate(PUNCT_TABLE)
-    # 3. Remove URL
     text = re.sub(r'https?://\S+|www\.\S+', '', text)
-    # 4. Remove emoji (giữ lại , . ! ? ; : - ( ) / %)
     text = re.sub(r"[^\w\s,.!?;:\-()/%]|_", "", text, flags=re.UNICODE)
     text = re.sub(r"\s+", " ", text).strip()
-    # 5. Chuẩn hóa teencode
     for pattern, replacement in TEENCODE_DICT.items():
         text = re.sub(pattern, replacement, text)
     text = re.sub(r"([" + VIET_CHARS + r"])\1+", r"\1", text)
@@ -309,6 +547,21 @@ def to_csv(df):
     return df.to_csv(index=False, encoding="utf-8-sig")
 
 
+def render_progress_bar(label, emoji, pct, color, vn_label):
+    """Render thanh progress bar đẹp cho xác suất."""
+    return (
+        f'<div style="margin-bottom:0.8rem">'
+        f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">'
+        f'<span style="font-weight:600;font-size:0.95rem">{emoji} {label}</span>'
+        f'<span style="font-size:0.85rem;color:#6b7280">{vn_label} · {pct:.1f}%</span>'
+        f'</div>'
+        f'<div class="prog-bar-track">'
+        f'<div class="prog-bar-fill" style="width:{pct:.1f}%;background:{color}"></div>'
+        f'</div>'
+        f'</div>'
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # KHỞI TẠO SESSION STATE
 # ═══════════════════════════════════════════════════════════════════════
@@ -320,10 +573,10 @@ if "history" not in st.session_state:
 # HEADER
 # ═══════════════════════════════════════════════════════════════════════
 
-st.markdown("""
+st.markdown(f"""
 <div class="header-gradient">
     <h1>👟 ShoeSenti AI</h1>
-    <p>Phân tích cảm xúc đánh giá sản phẩm giày dép bằng mô hình ViSoBERT + Naive Bayes</p>
+    <p>Phân tích cảm xúc đánh giá sản phẩm giày dép{f" bằng {MODEL_INFO['name']}" if MODEL_INFO else ""}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -332,42 +585,62 @@ st.markdown("""
 # ═══════════════════════════════════════════════════════════════════════
 
 with st.sidebar:
-    st.markdown("### 🧠 Về mô hình")
     st.markdown("""
-    **ShoeSenti AI** sử dụng kết hợp:
-    - **ViSoBERT** (uitnlp/visobert) cho tokenization tiếng Việt
-    - **Naive Bayes** (CountVectorizer) cho phân loại cảm xúc
+    <div style="text-align:center;margin-bottom:1rem">
+        <div style="font-size:3rem">🧠</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#374151">ShoeSenti AI</div>
+        <div style="font-size:0.82rem;color:#6b7280;margin-top:0.2rem">Sentiment Analysis for Shoes</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    Pipeline tiền xử lý 8 bước:
-    1. Lowercase
-    2. Remove punctuation
-    3. Remove URL
-    4. Remove emoji
-    5. Chuẩn hóa teencode
-    6. Tokenization ViSoBERT
-    7. Padding sequence
-    8. Attention Mask
-    """)
+    if MODEL_INFO is not None:
+        with st.expander("🤖 Về mô hình", expanded=True):
+            model_desc = f"**ShoeSenti AI** sử dụng:\n"
+            model_desc += f"- **{MODEL_INFO['name']}** ({MODEL_INFO['description']})\n"
+            if MODEL_INFO.get("details"):
+                model_desc += f"- {MODEL_INFO['details']}\n"
+            if MODEL_INFO.get("extra"):
+                model_desc += f"\n{MODEL_INFO['extra']}\n"
+            if MODEL_PIPELINE_STEPS:
+                model_desc += "\n**Pipeline tiền xử lý:**\n"
+                for idx, step in enumerate(MODEL_PIPELINE_STEPS, 1):
+                    model_desc += f"{idx}. {step}\n"
+            st.markdown(model_desc)
 
-    st.markdown("---")
-    st.markdown("### 🏷️ Nhãn cảm xúc")
-    for label_id, (name, vn, emoji, color) in {
-        0: ("Neutral", "Trung tính", "😐", "#9E9E9E"),
-        1: ("Positive", "Tích cực", "😊", "#4CAF50"),
-        2: ("Very Positive", "Rất tích cực", "🤩", "#2196F3"),
-    }.items():
-        st.markdown(f'<span style="background:{color};color:white;padding:0.2rem 0.8rem;border-radius:1rem;font-weight:600;font-size:0.9rem;">{emoji} {name} ({vn})</span>', unsafe_allow_html=True)
+    with st.expander("🏷️ Nhãn cảm xúc"):
+        for label_id in [0, 1, 2, 3]:
+            name = SENTIMENT_MAP[label_id]
+            vn = SENTIMENT_VN[label_id]
+            emoji = SENTIMENT_EMOJI[label_id]
+            color = SENTIMENT_COLOR[label_id]
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">'
+                f'<span style="background:{color};color:white;padding:0.3rem 0.9rem;border-radius:1.5rem;font-weight:700;font-size:0.85rem">{emoji} {name}</span>'
+                f'<span style="color:#6b7280;font-size:0.85rem">{vn}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
-    st.markdown("---")
-    st.markdown("### 📂 File hỗ trợ")
-    st.markdown("- CSV (.csv)")
-    st.markdown("- Excel (.xlsx)")
-    st.markdown("- Cột văn bản: **Review**")
+    with st.expander("📊 Khía cạnh đánh giá"):
+        aspect_html = ""
+        for col in ASPECT_COLS:
+            vn = ASPECT_VN.get(col, col)
+            aspect_html += f'<span class="aspect-badge">{col} ({vn})</span> '
+        st.markdown(aspect_html, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("### 📊 8 nhãn khía cạnh")
-    for col in ASPECT_COLS:
-        st.markdown(f"- {col}")
+    with st.expander("📂 File hỗ trợ"):
+        st.markdown("""
+        - **CSV** (.csv)
+        - **Excel** (.xlsx)
+        - Cột văn bản: **Review**
+        """)
+
+    st.markdown("""<div class="section-divider"></div>""", unsafe_allow_html=True)
+    st.markdown("""
+    <div style="text-align:center;font-size:0.78rem;color:#9ca3af;padding:0.5rem 0">
+    Đồ án Trí tuệ nhân tạo<br>Nhóm 14
+    </div>
+    """, unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════
 # LOAD MODEL
@@ -381,29 +654,25 @@ if pipeline is None:
     st.stop()
 
 # ═══════════════════════════════════════════════════════════════════════
-# CHẾ ĐỘ PHÂN TÍCH
+# CHẾ ĐỘ PHÂN TÍCH — Dùng Tabs
 # ═══════════════════════════════════════════════════════════════════════
 
-mode = st.radio(
-    "🔧 Chế độ phân tích",
-    ["📝 Phân tích 1 đánh giá", "📁 Phân tích hàng loạt từ file"],
-    horizontal=True,
-)
+tab_single, tab_batch = st.tabs(["📝 Phân tích 1 đánh giá", "📁 Phân tích hàng loạt"])
 
 # ═══════════════════════════════════════════════════════════════════════
-# CHẾ ĐỘ 1: PHÂN TÍCH 1 ĐÁNH GIÁ
+# TAB 1: PHÂN TÍCH 1 ĐÁNH GIÁ
 # ═══════════════════════════════════════════════════════════════════════
 
-if mode == "📝 Phân tích 1 đánh giá":
-    col_input, col_stats = st.columns([3, 2])
+with tab_single:
+    col_input, col_stats = st.columns([3, 1])
 
     with col_input:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown("### ✍️ Nhập đánh giá giày dép")
         user_input = st.text_area(
-            "",
+            "Nhập đánh giá",
             placeholder="Ví dụ: Giày đẹp, đi êm lắm, giao hàng nhanh, đáng tiền!",
-            height=150,
+            height=140,
             label_visibility="collapsed",
         )
         analyze_btn = st.button("🔍 Phân tích cảm xúc", key="single", type="primary")
@@ -411,11 +680,12 @@ if mode == "📝 Phân tích 1 đánh giá":
 
     with col_stats:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("### 📊 Thống kê nhanh")
+        st.markdown("### 📊 Thống kê")
         total = len(st.session_state.history)
         if total > 0:
             labels = [h["label"] for h in st.session_state.history]
             most_common = max(set(labels), key=labels.count)
+            avg_conf = np.mean([h["confidence"] for h in st.session_state.history])
             st.markdown(f"""
             <div class="stat-card" style="margin-bottom:0.5rem">
                 <div class="stat-value">{total}</div>
@@ -423,18 +693,18 @@ if mode == "📝 Phân tích 1 đánh giá":
             </div>
             <div class="stat-card" style="margin-bottom:0.5rem">
                 <div class="stat-value">{SENTIMENT_EMOJI[most_common]}</div>
-                <div class="stat-label">Cảm xúc phổ biến nhất</div>
+                <div class="stat-label">Phổ biến nhất</div>
+            </div>
+            <div class="stat-card">
+                <div class=\"stat-value\" style=\"font-size:1.3rem;color:#0d9488\">{avg_conf:.0f}%</div>
+                <div class="stat-label">Độ tin cậy TB</div>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
-            <div class="stat-card" style="margin-bottom:0.5rem">
-                <div class="stat-value">0</div>
-                <div class="stat-label">Tổng phân tích</div>
-            </div>
-            <div class="stat-card" style="margin-bottom:0.5rem">
-                <div class="stat-value">—</div>
-                <div class="stat-label">Chưa có dữ liệu</div>
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <div class="empty-text">Chưa có phân tích nào</div>
             </div>
             """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -455,7 +725,8 @@ if mode == "📝 Phân tích 1 đánh giá":
         })
 
         # Hiển thị kết quả
-        st.markdown("---")
+        st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
+
         res_col1, res_col2 = st.columns([2, 3])
 
         with res_col1:
@@ -463,7 +734,7 @@ if mode == "📝 Phân tích 1 đánh giá":
             <div class="result-card">
                 <div class="emoji-big">{emoji}</div>
                 <h2>{label}</h2>
-                <p style="font-size:1rem;opacity:0.85;">{label_vn}</p>
+                <p style="font-size:1.05rem;opacity:0.88;position:relative">{label_vn}</p>
                 <div class="confidence">Độ tin cậy: <b>{confidence:.1f}%</b></div>
             </div>
             """, unsafe_allow_html=True)
@@ -471,24 +742,13 @@ if mode == "📝 Phân tích 1 đánh giá":
         with res_col2:
             st.markdown('<div class="card">', unsafe_allow_html=True)
             st.markdown("### 📈 Xác suất từng lớp")
-            for i, (lbl, vn, emj) in {
-                0: ("Neutral", "Trung tính", "😐"),
-                1: ("Positive", "Tích cực", "😊"),
-                2: ("Very Positive", "Rất tích cực", "🤩"),
-            }.items():
+            for i in [0, 1, 2, 3]:
+                lbl = SENTIMENT_MAP[i]
+                vn = SENTIMENT_VN[i]
+                emj = SENTIMENT_EMOJI[i]
                 pct = proba[i] * 100
                 bar_color = SENTIMENT_COLOR[i]
-                st.markdown(
-                    f'<div style="margin-bottom:0.6rem">'
-                    f'<span style="font-weight:600">{emj} {lbl}</span>'
-                    f'<span style="color:#888;font-size:0.85rem"> ({vn})</span><br>'
-                    f'<div style="background:#e8e8f0;border-radius:0.5rem;overflow:hidden;height:1.2rem">'
-                    f'<div style="background:{bar_color};width:{pct:.1f}%;height:100%;border-radius:0.5rem"></div>'
-                    f'</div>'
-                    f'<span style="font-size:0.85rem;color:#555">{pct:.1f}%</span>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
+                st.markdown(render_progress_bar(lbl, emj, pct, bar_color, vn), unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
         # Hiển thị text đã tiền xử lý
@@ -499,10 +759,10 @@ if mode == "📝 Phân tích 1 đánh giá":
         st.warning("⚠️ Vui lòng nhập đánh giá trước khi phân tích!")
 
 # ═══════════════════════════════════════════════════════════════════════
-# CHẾ ĐỘ 2: PHÂN TÍCH HÀNG LOẠT TỪ FILE
+# TAB 2: PHÂN TÍCH HÀNG LOẠT TỪ FILE
 # ═══════════════════════════════════════════════════════════════════════
 
-else:
+with tab_batch:
     col_upload, col_info = st.columns([3, 2])
 
     with col_upload:
@@ -512,6 +772,7 @@ else:
             "Chọn file CSV hoặc Excel",
             type=["csv", "xlsx"],
             help="File phải chứa cột văn bản đánh giá",
+            label_visibility="collapsed",
         )
 
         if uploaded_file is not None:
@@ -522,14 +783,12 @@ else:
                     df = pd.read_excel(uploaded_file)
                 st.success(f"✅ Đọc thành công: **{len(df):,} dòng**, {len(df.columns)} cột")
 
-                # Chọn cột text
                 text_col = st.selectbox(
                     "📝 Chọn cột văn bản",
                     options=df.columns.tolist(),
                     index=df.columns.tolist().index("Review") if "Review" in df.columns else 0,
                 )
 
-                # Chọn cột khía cạnh (nếu có)
                 aspect_cols = [c for c in ASPECT_COLS if c in df.columns]
                 if aspect_cols:
                     st.info(f"📊 Phát hiện {len(aspect_cols)} cột khía cạnh: {', '.join(aspect_cols)}")
@@ -543,17 +802,28 @@ else:
         else:
             df = None
             analyze_batch_btn = False
-            st.info("👆 Tải lên file CSV hoặc Excel để bắt đầu")
+            st.markdown("""
+            <div class="empty-state">
+                <div class="empty-icon">📂</div>
+                <div class="empty-text">Kéo thả hoặc chọn file để bắt đầu</div>
+                <div style="font-size:0.8rem;color:#d1d5db;margin-top:0.3rem">Hỗ trợ CSV, Excel (.xlsx)</div>
+            </div>
+            """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_info:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown("### 📋 Hướng dẫn")
         st.markdown("""
-        1. Tải lên file CSV hoặc Excel
-        2. Chọn cột chứa văn bản đánh giá
-        3. Bấm **Phân tích hàng loạt**
-        4. Xem kết quả và tải xuống
+        **4 bước đơn giản:**
+
+        1️⃣ Tải lên file CSV hoặc Excel  
+        2️⃣ Chọn cột chứa văn bản đánh giá  
+        3️⃣ Bấm **Phân tích hàng loạt**  
+        4️⃣ Xem kết quả và tải xuống  
+
+        ---
+        💡 **Mẹo:** File nên có cột `Review` chứa văn bản đánh giá tiếng Việt.
         """)
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -563,18 +833,17 @@ else:
             texts = df[text_col].astype(str).tolist()
             preds, probas, cleaned = predict_batch(pipeline, texts)
 
-            # Tạo DataFrame kết quả
             df_result = df.copy()
             df_result["Review_Cleaned"] = cleaned
             df_result["Sentiment"] = preds
             df_result["Sentiment_Label"] = [SENTIMENT_MAP[p] for p in preds]
             df_result["Confidence"] = [f"{probas[i][p]*100:.1f}%" for i, p in enumerate(preds)]
 
-            for i, label in enumerate([0, 1, 2]):
+            for i, label in enumerate([0, 1, 2, 3]):
                 df_result[f"Prob_{SENTIMENT_MAP[label]}"] = [f"{probas[j][i]*100:.1f}%" for j in range(len(preds))]
 
         # Thống kê
-        st.markdown("---")
+        st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
         st.markdown("## 📊 Kết quả phân tích hàng loạt")
 
         stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
@@ -585,13 +854,13 @@ else:
             st.markdown(f'<div class="stat-card"><div class="stat-value">{total:,}</div><div class="stat-label">Tổng đánh giá</div></div>', unsafe_allow_html=True)
         with stat_col2:
             pos_count = dist.get(1, 0) + dist.get(2, 0)
-            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#4CAF50">{pos_count:,}</div><div class="stat-label">Tích cực</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#10b981">{pos_count:,}</div><div class="stat-label">Tích cực</div></div>', unsafe_allow_html=True)
         with stat_col3:
             neu_count = dist.get(0, 0)
-            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#9E9E9E">{neu_count:,}</div><div class="stat-label">Trung tính</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#9ca3af">{neu_count:,}</div><div class="stat-label">Trung tính</div></div>', unsafe_allow_html=True)
         with stat_col4:
             avg_conf = np.mean([probas[i][preds[i]] for i in range(len(preds))]) * 100
-            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#764ba2">{avg_conf:.1f}%</div><div class="stat-label">Độ tin cậy TB</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class=\"stat-card\"><div class=\"stat-value\" style=\"color:#0d9488\">{avg_conf:.1f}%</div><div class=\"stat-label\">Độ tin cậy TB</div></div>', unsafe_allow_html=True)
 
         # Biểu đồ phân bố
         chart_col1, chart_col2 = st.columns(2)
@@ -600,20 +869,33 @@ else:
             st.markdown('<div class="card">', unsafe_allow_html=True)
             st.markdown("### 📊 Phân bố cảm xúc")
             dist_df = pd.DataFrame({
-                "Cảm xúc": [SENTIMENT_EMOJI.get(k, "") + " " + SENTIMENT_MAP.get(k, str(k)) for k in dist.index],
-                "Số lượng": dist.values,
+                "Cảm xúc": [SENTIMENT_MAP.get(k, str(k)) for k in sorted(dist.index)],
+                "Số lượng": [dist.get(k, 0) for k in sorted(dist.index)],
             })
-            st.bar_chart(dist_df.set_index("Cảm xúc"), height=300)
+            st.bar_chart(dist_df.set_index("Cảm xúc"), height=300, color="#14b8a6")
             st.markdown('</div>', unsafe_allow_html=True)
 
         with chart_col2:
             st.markdown('<div class="card">', unsafe_allow_html=True)
             st.markdown("### 🥧 Tỷ lệ cảm xúc")
-            pie_df = pd.DataFrame({
-                "Cảm xúc": [SENTIMENT_MAP.get(k, str(k)) for k in dist.index],
-                "Tỷ lệ": dist.values / total * 100,
-            })
-            st.bar_chart(pie_df.set_index("Cảm xúc"), height=300)
+            # Pie chart using matplotlib
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(figsize=(4, 4))
+            labels_pie = [SENTIMENT_MAP.get(k, str(k)) for k in sorted(dist.index)]
+            sizes = [dist.get(k, 0) for k in sorted(dist.index)]
+            colors_pie = [SENTIMENT_COLOR[k] for k in sorted(dist.index)]
+            wedges, texts, autotexts = ax.pie(
+                sizes, labels=labels_pie, colors=colors_pie,
+                autopct='%1.1f%%', startangle=90,
+                textprops={'fontsize': 10, 'fontweight': 'bold'},
+                pctdistance=0.75,
+            )
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontsize(9)
+            ax.set_aspect('equal')
+            fig.patch.set_alpha(0)
+            st.pyplot(fig, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
         # Bảng kết quả
@@ -646,18 +928,27 @@ else:
 # ═══════════════════════════════════════════════════════════════════════
 
 if st.session_state.history:
-    st.markdown("---")
-    st.markdown("### 🕐 Lịch sử phân tích gần đây")
+    st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
+
+    hist_header_col, hist_clear_col = st.columns([5, 1])
+    with hist_header_col:
+        st.markdown("### 🕐 Lịch sử phân tích gần đây")
+    with hist_clear_col:
+        if st.button("🗑️ Xóa", key="clear_history"):
+            st.session_state.history = []
+            st.rerun()
+
     for i, item in enumerate(st.session_state.history[:10]):
         label = item["label"]
         emoji = SENTIMENT_EMOJI[label]
         label_name = SENTIMENT_MAP[label]
         conf = item["confidence"]
         text_preview = item["text"][:60] + ("..." if len(item["text"]) > 60 else "")
+        border_color = SENTIMENT_COLOR[label]
         st.markdown(
-            f'<div class="history-item">'
-            f'{emoji} <b>{label_name}</b> ({conf:.1f}%) — '
-            f'<span style="color:#666">{text_preview}</span>'
+            f'<div class="history-item" style="border-left-color:{border_color}">'
+            f'{emoji} <b>{label_name}</b> <span style="color:#9ca3af;font-size:0.8rem">({conf:.1f}%)</span> — '
+            f'<span style="color:#6b7280">{text_preview}</span>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -666,10 +957,10 @@ if st.session_state.history:
 # FOOTER
 # ═══════════════════════════════════════════════════════════════════════
 
-st.markdown("---")
+st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 st.markdown(
-    '<p style="text-align:center;color:#999;font-size:0.85rem;">'
-    'ShoeSenti AI — Ứng dụng ViSoBERT phân tích cảm xúc đánh giá giày dép | '
-    'Đồ án Trí tuệ nhân tạo — Nhóm 14</p>',
+    '<div class="footer-text">'
+    '👟 ShoeSenti AI — Phân tích cảm xúc đánh giá giày dép | '
+    'Đồ án Trí tuệ nhân tạo — Nhóm 14</div>',
     unsafe_allow_html=True,
 )
