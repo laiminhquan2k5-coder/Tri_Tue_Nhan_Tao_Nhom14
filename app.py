@@ -31,24 +31,34 @@ st.set_page_config(
 st.markdown("""
 <style>
 /* ── Import font ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 /* ── Global ── */
 html, body, [class*="stApp"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    background: #faf8ff !important;
+}
+
+/* ── Global text color ── */
+.stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span {
+    color: #3b0764 !important;
+}
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+    color: #1e1b4b !important;
 }
 
 /* ── Gradient Header ── */
 .header-gradient {
-    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 40%, #2dd4bf 100%);
-    padding: 2.5rem 2rem 2rem 2rem;
-    border-radius: 0 0 2rem 2rem;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 25%, #a78bfa 50%, #c084fc 75%, #e879f9 100%);
+    padding: 2.2rem 2rem 1.8rem 2rem;
+    border-radius: 0 0 2.5rem 2.5rem;
     margin: -2rem -2rem 2rem -2rem;
     color: white;
     text-align: center;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(13, 148, 136, 0.25);
+    box-shadow: 0 10px 50px rgba(139, 92, 246, 0.25);
+}
 .header-gradient::before {
     content: '';
     position: absolute;
@@ -56,143 +66,212 @@ html, body, [class*="stApp"] {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
-    animation: headerShimmer 8s ease-in-out infinite;
+    background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.12) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(255,255,255,0.06) 0%, transparent 50%);
+    animation: headerShimmer 10s ease-in-out infinite;
 }
 @keyframes headerShimmer {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(5%, 5%); }
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(3%, 2%) rotate(2deg); }
 }
 .header-gradient h1 {
     color: white !important;
-    font-size: 2.8rem !important;
-    font-weight: 800 !important;
-    margin-bottom: 0.4rem !important;
+    font-size: 2.6rem !important;
+    font-weight: 900 !important;
+    margin-bottom: 0.3rem !important;
     letter-spacing: -1px;
     position: relative;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.12);
 }
 .header-gradient p {
-    color: rgba(255,255,255,0.88) !important;
-    font-size: 1.05rem !important;
+    color: rgba(255,255,255,0.90) !important;
+    font-size: 1rem !important;
     margin-top: 0 !important;
     position: relative;
+    font-weight: 500;
 }
 
-/* ── Card chung (glassmorphism) ── */
+/* ── Card chung (glassmorphism nâng cao) ── */
 .card {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 1.2rem;
     padding: 1.5rem;
-    box-shadow: 0 4px 24px rgba(13, 148, 136, 0.07);
-    border: 1px solid rgba(240, 253, 250, 0.8);
+    box-shadow: 0 2px 20px rgba(139, 92, 246, 0.05), 0 1px 3px rgba(0,0,0,0.03);
+    border: 1px solid rgba(255, 255, 255, 0.8);
     margin-bottom: 1rem;
     transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
 .card:hover {
-    box-shadow: 0 8px 32px rgba(13, 148, 136, 0.12);
+    box-shadow: 0 8px 35px rgba(139, 92, 246, 0.08), 0 2px 6px rgba(0,0,0,0.04);
+    transform: translateY(-1px);
 }
 .card h3 {
     margin-top: 0 !important;
-    color: #374151;
+    color: #4c1d95;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
 }
 
-/* ── Card kết quả chính (gradient) ── */
+/* ── Card kết quả chính ── */
 .result-card {
-    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 40%, #2dd4bf 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 35%, #a78bfa 65%, #c084fc 100%);
     border-radius: 1.5rem;
     padding: 2.5rem 2rem;
     color: white;
     text-align: center;
-    box-shadow: 0 8px 40px rgba(13, 148, 136, 0.30);
+    box-shadow: 0 12px 48px rgba(139, 92, 246, 0.30);
     margin-bottom: 1rem;
     position: relative;
     overflow: hidden;
 }
+.result-card::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
+    border-radius: 50%;
+}
 .result-card::after {
     content: '';
     position: absolute;
-    top: 0; right: 0;
-    width: 120px; height: 120px;
-    background: radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%);
+    bottom: -20%;
+    left: -10%;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%);
     border-radius: 50%;
-    transform: translate(30%, -30%);
 }
 .result-card h2 {
     color: white !important;
     font-size: 2.2rem !important;
-    font-weight: 800 !important;
+    font-weight: 900 !important;
     margin-bottom: 0.2rem !important;
     position: relative;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 .result-card .confidence {
     font-size: 1.15rem;
-    opacity: 0.92;
+    opacity: 0.95;
     position: relative;
 }
 .result-card .emoji-big {
     font-size: 4rem;
     margin-bottom: 0.4rem;
     position: relative;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+    animation: emojiPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes emojiPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* ── Stat card ── */
 .stat-card {
-    background: linear-gradient(135deg, #f0fdfa 0%, #e6f7f5 100%);
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
     border-radius: 1rem;
     padding: 1.2rem 1rem;
     text-align: center;
-    border: 1px solid rgba(13, 148, 136, 0.1);
-    transition: transform 0.2s ease;
+    border: 1px solid rgba(139, 92, 246, 0.10);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .stat-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.10);
 }
 .stat-card .stat-value {
     font-size: 2rem;
-    font-weight: 800;
-    color: #0d9488;
+    font-weight: 900;
+    color: #7c3aed;
     line-height: 1.2;
 }
 .stat-card .stat-label {
-    font-size: 0.82rem;
-    color: #6b7280;
+    font-size: 0.8rem;
+    color: #6d28d9;
     margin-top: 0.3rem;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 /* ── Sidebar ── */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #f7fdfb 0%, #edf5f3 100%);
-    border-right: 1px solid rgba(13, 148, 136, 0.08);
+    background: linear-gradient(180deg, #faf5ff 0%, #f3e8ff 50%, #ede9fe 100%);
+    border-right: 1px solid rgba(139, 92, 246, 0.06);
 }
-section[data-testid="stSidebar"] .sidebar-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #374151;
-    margin-bottom: 0.5rem;
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] li {
+    color: #4c1d95 !important;
+}
+section[data-testid="stSidebar"] strong {
+    color: #1e1b4b !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] p,
+section[data-testid="stSidebar"] [data-testid="stExpander"] span,
+section[data-testid="stSidebar"] [data-testid="stExpander"] li {
+    color: #4c1d95 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(99, 102, 241, 0.04)) !important;
+    border-radius: 0.8rem !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    border-radius: 0.8rem !important;
+    transition: background 0.2s ease;
+}
+/* ── Expander no black bg ── */
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] details > summary,
+[data-testid="stExpander"] summary[class*="st-emotion"] {
+    background: transparent !important;
+    color: inherit !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary,
+section[data-testid="stSidebar"] [data-testid="stExpander"] details > summary,
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary[class*="st-emotion"] {
+    background: transparent !important;
+    color: inherit !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover,
+section[data-testid="stSidebar"] [data-testid="stExpander"] details > summary:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(99, 102, 241, 0.04)) !important;
+}
+[data-testid="stExpander"] summary:hover,
+[data-testid="stExpander"] details > summary:hover {
+    background: rgba(139, 92, 246, 0.05) !important;
+}
+[data-testid="stExpander"] summary:focus,
+[data-testid="stExpander"] summary:focus-visible,
+[data-testid="stExpander"] summary:active,
+[data-testid="stExpander"] details > summary:focus,
+[data-testid="stExpander"] details > summary:focus-visible,
+[data-testid="stExpander"] details > summary:active {
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
-/* ── Nút phân tích ── */
+/* ── Nút primary ── */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #2dd4bf 100%) !important;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%) !important;
     color: white !important;
     border: none !important;
     border-radius: 0.8rem !important;
     font-weight: 700 !important;
     font-size: 1rem !important;
-    padding: 0.75rem 2rem !important;
+    padding: 0.7rem 2rem !important;
     width: 100%;
     transition: all 0.25s ease;
-    box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.30);
     letter-spacing: 0.3px;
 }
 .stButton > button[kind="primary"]:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(13, 148, 136, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.45);
 }
 .stButton > button[kind="primary"]:active {
     transform: translateY(-1px);
@@ -203,10 +282,12 @@ section[data-testid="stSidebar"] .sidebar-title {
     border-radius: 0.8rem !important;
     font-weight: 600 !important;
     transition: all 0.2s ease;
+    border: 1px solid #ddd6fe !important;
 }
 .stDownloadButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.12);
+    border-color: #8b5cf6 !important;
 }
 
 /* ── Ẩn streamlit branding ── */
@@ -214,10 +295,15 @@ section[data-testid="stSidebar"] .sidebar-title {
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-/* ── Dataframe đẹp ── */
+/* ── Dataframe ── */
 .dataframe {
     border-radius: 0.8rem !important;
-    border: 1px solid #e5e7eb !important;
+    border: 1px solid #ddd6fe !important;
+}
+.dataframe th {
+    background: #f5f3ff !important;
+    color: #4c1d95 !important;
+    font-weight: 700 !important;
 }
 
 /* ── Tag nhãn cảm xúc ── */
@@ -230,30 +316,32 @@ header {visibility: hidden;}
     margin: 0.2rem;
     letter-spacing: 0.3px;
 }
-.tag-neutral { background: #e5e7eb; color: #4b5563; }
-.tag-positive { background: #d1fae5; color: #065f46; }
-.tag-very-positive { background: #dbeafe; color: #1e40af; }
+.tag-negative { background: #fecaca; color: #991b1b; border: 1px solid #f87171; }
+.tag-neutral { background: #e0e7ff; color: #3730a3; border: 1px solid #818cf8; }
+.tag-positive { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+.tag-very-positive { background: #ede9fe; color: #5b21b6; border: 1px solid #a78bfa; }
 
 /* ── History item ── */
 .history-item {
-    background: linear-gradient(135deg, #f7fdfb 0%, #edf8f5 100%);
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
     border-radius: 0.8rem;
-    padding: 0.8rem 1rem;
+    padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
-    border-left: 4px solid #14b8a6;
-    font-size: 0.88rem;
-    transition: transform 0.15s ease;
+    border-left: 4px solid #8b5cf6;
+    font-size: 0.85rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .history-item:hover {
     transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.08);
 }
 
-/* ── Progress bar đẹp hơn ── */
+/* ── Progress bar ── */
 .prog-bar-track {
-    background: #f3f4f6;
+    background: #ede9fe;
     border-radius: 1rem;
     overflow: hidden;
-    height: 0.65rem;
+    height: 0.6rem;
     margin: 0.3rem 0 0.15rem 0;
 }
 .prog-bar-fill {
@@ -262,87 +350,102 @@ header {visibility: hidden;}
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ── Tabs styling ── */
+/* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-    background: #f0fdfa;
+    gap: 6px;
+    background: #f5f3ff;
     border-radius: 1rem;
-    padding: 6px;
+    padding: 5px;
 }
 .stTabs [data-baseweb="tab"] {
     border-radius: 0.7rem;
     padding: 10px 20px;
     font-weight: 600;
-    color: #6b7280;
+    color: #6d28d9;
     transition: all 0.2s ease;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
     color: white !important;
-    box-shadow: 0 2px 12px rgba(13, 148, 136, 0.3);
+    box-shadow: 0 2px 12px rgba(139, 92, 246, 0.25);
 }
 
 /* ── Text area ── */
 .stTextArea textarea {
     border-radius: 0.8rem !important;
-    border: 2px solid #e5e7eb !important;
-    transition: border-color 0.2s ease;
+    border: 2px solid #ddd6fe !important;
+    background: #faf5ff !important;
+    color: #1e1b4b !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-size: 0.95rem !important;
+}
+.stTextArea textarea::placeholder {
+    color: #a78bfa !important;
 }
 .stTextArea textarea:focus {
-    border-color: #14b8a6 !important;
-    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1) !important;
-}
-
-/* ── Expander ── */
-.streamlit-expanderHeader {
-    border-radius: 0.8rem !important;
-    font-weight: 600 !important;
+    border-color: #8b5cf6 !important;
+    background: white !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12) !important;
 }
 
 /* ── File uploader ── */
 .stFileUploader {
-    border: 2px dashed #d1d5db;
-    border-radius: 1rem;
+    border: 2px dashed #c4b5fd !important;
+    border-radius: 1rem !important;
     transition: border-color 0.2s ease;
 }
+.stFileUploader [data-testid="stFileUploaderDropzone"] {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%) !important;
+}
+.stFileUploader [data-testid="stBaseButton-secondary"] {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 0.6rem !important;
+    font-weight: 600 !important;
+}
 .stFileUploader:hover {
-    border-color: #14b8a6;
+    border-color: #8b5cf6 !important;
+}
+.stFileUploader:hover [data-testid="stFileUploaderDropzone"] {
+    background: linear-gradient(135deg, #f5f0ff 0%, #ede4ff 100%) !important;
+}
+.stFileUploader small,
+.stFileUploader span,
+.stFileUploader div {
+    color: #7c3aed !important;
+}
+.stFileUploader small {
+    font-weight: 500 !important;
+}
+
+/* ── Selectbox ── */
+.stSelectbox [data-baseweb="select"] > div {
+    border-radius: 0.7rem !important;
+    border-color: #ddd6fe !important;
 }
 
 /* ── Section divider ── */
 .section-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, #d1d5db, transparent);
-    margin: 2rem 0;
+    background: linear-gradient(90deg, transparent, #c4b5fd, transparent);
+    margin: 1.5rem 0;
     border: none;
 }
 
 /* ── Footer ── */
 .footer-text {
     text-align: center;
-    color: #9ca3af;
-    font-size: 0.85rem;
-    padding: 1.5rem 0;
-}
-
-/* ── Aspect badge ── */
-.aspect-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #f0fdfa, #e0f2f1);
-    color: #0d9488;
-    padding: 0.25rem 0.7rem;
-    border-radius: 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin: 0.15rem;
-    border: 1px solid rgba(13, 148, 136, 0.15);
+    color: #a78bfa;
+    font-size: 0.82rem;
+    padding: 1rem 0;
 }
 
 /* ── Empty state ── */
 .empty-state {
     text-align: center;
     padding: 2rem;
-    color: #9ca3af;
+    color: #a78bfa;
 }
 .empty-state .empty-icon {
     font-size: 3rem;
@@ -351,11 +454,24 @@ header {visibility: hidden;}
 .empty-state .empty-text {
     font-size: 0.95rem;
     font-weight: 500;
+    color: #7c3aed;
 }
 
 /* ── Spinner ── */
 .stSpinner > div {
-    border-color: #14b8a6 transparent transparent transparent !important;
+    border-color: #8b5cf6 transparent transparent transparent !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+
+/* ── Success/Info/Warning boxes ── */
+.stAlert {
+    border-radius: 0.8rem !important;
+    border: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -395,7 +511,7 @@ header {visibility: hidden;}
 
 MODEL_INFO = {
     "name": "ViSoBERT",
-    "description": "uitnlp/visobert",
+    "description": "ViSoBERT",
     "details": "Mô hình ngôn ngữ tiếng Việt dựa trên BERT, chuyên biệt cho phân tích cảm xúc.",
 }
 
@@ -416,7 +532,7 @@ MODEL_PIPELINE_STEPS = [
 
 SENTIMENT_MAP = {0: "Negative", 1: "Neutral", 2: "Positive", 3: "Very Positive"}
 SENTIMENT_EMOJI = {0: "😞", 1: "😐", 2: "😊", 3: "🤩"}
-SENTIMENT_COLOR = {0: "#ef4444", 1: "#94a3b8", 2: "#10b981", 3: "#0ea5e9"}
+SENTIMENT_COLOR = {0: "#ef4444", 1: "#8b5cf6", 2: "#10b981", 3: "#6366f1"}
 SENTIMENT_VN = {0: "Tiêu cực", 1: "Trung tính", 2: "Tích cực", 3: "Rất tích cực"}
 
 ASPECT_COLS = ["Price", "Shipping", "Outlook", "Quality", "Size", "Shop_Service", "General", "Others"]
@@ -553,7 +669,7 @@ def render_progress_bar(label, emoji, pct, color, vn_label):
         f'<div style="margin-bottom:0.8rem">'
         f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">'
         f'<span style="font-weight:600;font-size:0.95rem">{emoji} {label}</span>'
-        f'<span style="font-size:0.85rem;color:#6b7280">{vn_label} · {pct:.1f}%</span>'
+        f'<span style="font-size:0.85rem;color:#6d28d9">{vn_label} · {pct:.1f}%</span>'
         f'</div>'
         f'<div class="prog-bar-track">'
         f'<div class="prog-bar-fill" style="width:{pct:.1f}%;background:{color}"></div>'
@@ -588,23 +704,19 @@ with st.sidebar:
     st.markdown("""
     <div style="text-align:center;margin-bottom:1rem">
         <div style="font-size:3rem">🧠</div>
-        <div style="font-size:1.1rem;font-weight:700;color:#374151">ShoeSenti AI</div>
-        <div style="font-size:0.82rem;color:#6b7280;margin-top:0.2rem">Sentiment Analysis for Shoes</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#1e1b4b">ShoeSenti AI</div>
+        <div style="font-size:0.82rem;color:#7c3aed;margin-top:0.2rem">Sentiment Analysis for Shoes</div>
     </div>
     """, unsafe_allow_html=True)
 
     if MODEL_INFO is not None:
         with st.expander("🤖 Về mô hình", expanded=True):
             model_desc = f"**ShoeSenti AI** sử dụng:\n"
-            model_desc += f"- **{MODEL_INFO['name']}** ({MODEL_INFO['description']})\n"
+            model_desc += f"- **{MODEL_INFO['name']}**\n"
             if MODEL_INFO.get("details"):
                 model_desc += f"- {MODEL_INFO['details']}\n"
             if MODEL_INFO.get("extra"):
                 model_desc += f"\n{MODEL_INFO['extra']}\n"
-            if MODEL_PIPELINE_STEPS:
-                model_desc += "\n**Pipeline tiền xử lý:**\n"
-                for idx, step in enumerate(MODEL_PIPELINE_STEPS, 1):
-                    model_desc += f"{idx}. {step}\n"
             st.markdown(model_desc)
 
     with st.expander("🏷️ Nhãn cảm xúc"):
@@ -614,31 +726,25 @@ with st.sidebar:
             emoji = SENTIMENT_EMOJI[label_id]
             color = SENTIMENT_COLOR[label_id]
             st.markdown(
-                f'<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">'
-                f'<span style="background:{color};color:white;padding:0.3rem 0.9rem;border-radius:1.5rem;font-weight:700;font-size:0.85rem">{emoji} {name}</span>'
-                f'<span style="color:#6b7280;font-size:0.85rem">{vn}</span>'
+                f'<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem">'
+                f'<span style="background:{color};color:white;padding:0.35rem 1rem;border-radius:1.5rem;font-weight:700;font-size:0.85rem;box-shadow:0 2px 8px {color}44">{emoji} {name}</span>'
+                f'<span style="color:#6d28d9 !important;font-size:0.85rem;font-weight:600">{vn}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
 
-    with st.expander("📊 Khía cạnh đánh giá"):
-        aspect_html = ""
-        for col in ASPECT_COLS:
-            vn = ASPECT_VN.get(col, col)
-            aspect_html += f'<span class="aspect-badge">{col} ({vn})</span> '
-        st.markdown(aspect_html, unsafe_allow_html=True)
 
     with st.expander("📂 File hỗ trợ"):
-        st.markdown("""
-        - **CSV** (.csv)
-        - **Excel** (.xlsx)
-        - Cột văn bản: **Review**
-        """)
+        st.markdown(
+            "📄 **CSV** (.csv)  \n"
+            "📊 **Excel** (.xlsx)  \n"
+            "📝 Cột văn bản: **Review**"
+        )
 
     st.markdown("""<div class="section-divider"></div>""", unsafe_allow_html=True)
     st.markdown("""
-    <div style="text-align:center;font-size:0.78rem;color:#9ca3af;padding:0.5rem 0">
-    Đồ án Trí tuệ nhân tạo<br>Nhóm 14
+    <div style="text-align:center;font-size:0.78rem;color:#7c3aed;padding:0.5rem 0">
+    Bài tập cuối kỳ Trí tuệ nhân tạo<br>Nhóm 14
     </div>
     """, unsafe_allow_html=True)
 
@@ -664,50 +770,30 @@ tab_single, tab_batch = st.tabs(["📝 Phân tích 1 đánh giá", "📁 Phân t
 # ═══════════════════════════════════════════════════════════════════════
 
 with tab_single:
-    col_input, col_stats = st.columns([3, 1])
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("### ✍️ Nhập đánh giá giày dép")
+    user_input = st.text_area(
+        "Nhập đánh giá",
+        placeholder="Ví dụ: Giày đẹp, đi êm lắm, giao hàng nhanh, đáng tiền!",
+        height=140,
+        label_visibility="collapsed",
+    )
+    analyze_btn = st.button("🔍 Phân tích cảm xúc", key="single", type="primary")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    with col_input:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("### ✍️ Nhập đánh giá giày dép")
-        user_input = st.text_area(
-            "Nhập đánh giá",
-            placeholder="Ví dụ: Giày đẹp, đi êm lắm, giao hàng nhanh, đáng tiền!",
-            height=140,
-            label_visibility="collapsed",
-        )
-        analyze_btn = st.button("🔍 Phân tích cảm xúc", key="single", type="primary")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with col_stats:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("### 📊 Thống kê")
-        total = len(st.session_state.history)
-        if total > 0:
-            labels = [h["label"] for h in st.session_state.history]
-            most_common = max(set(labels), key=labels.count)
-            avg_conf = np.mean([h["confidence"] for h in st.session_state.history])
-            st.markdown(f"""
-            <div class="stat-card" style="margin-bottom:0.5rem">
-                <div class="stat-value">{total}</div>
-                <div class="stat-label">Tổng phân tích</div>
-            </div>
-            <div class="stat-card" style="margin-bottom:0.5rem">
-                <div class="stat-value">{SENTIMENT_EMOJI[most_common]}</div>
-                <div class="stat-label">Phổ biến nhất</div>
-            </div>
-            <div class="stat-card">
-                <div class=\"stat-value\" style=\"font-size:1.3rem;color:#0d9488\">{avg_conf:.0f}%</div>
-                <div class="stat-label">Độ tin cậy TB</div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div class="empty-state">
-                <div class="empty-icon">📝</div>
-                <div class="empty-text">Chưa có phân tích nào</div>
-            </div>
-            """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Stats ngang khi có dữ liệu
+    total = len(st.session_state.history)
+    if total > 0:
+        labels = [h["label"] for h in st.session_state.history]
+        most_common = max(set(labels), key=labels.count)
+        avg_conf = np.mean([h["confidence"] for h in st.session_state.history])
+        s1, s2, s3 = st.columns(3)
+        with s1:
+            st.markdown(f'<div class="stat-card"><div class="stat-value">{total}</div><div class="stat-label">Tổng phân tích</div></div>', unsafe_allow_html=True)
+        with s2:
+            st.markdown(f'<div class="stat-card"><div class="stat-value">{SENTIMENT_EMOJI[most_common]}</div><div class="stat-label">Phổ biến nhất</div></div>', unsafe_allow_html=True)
+        with s3:
+            st.markdown(f'<div class="stat-card"><div class="stat-value" style="font-size:1.3rem;color:#7c3aed">{avg_conf:.0f}%</div><div class="stat-label">Độ tin cậy TB</div></div>', unsafe_allow_html=True)
 
     # Phân tích khi bấm nút
     if analyze_btn and user_input.strip():
@@ -758,74 +844,79 @@ with tab_single:
     elif analyze_btn and not user_input.strip():
         st.warning("⚠️ Vui lòng nhập đánh giá trước khi phân tích!")
 
+    # Lịch sử phân tích trong tab single
+    if st.session_state.history:
+        st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
+        hc1, hc2 = st.columns([5, 1])
+        with hc1:
+            st.markdown("### 🕐 Lịch sử phân tích gần đây")
+        with hc2:
+            if st.button("🗑️ Xóa", key="clear_history"):
+                st.session_state.history = []
+                st.rerun()
+        for i, item in enumerate(st.session_state.history[:10]):
+            label = item["label"]
+            emoji = SENTIMENT_EMOJI[label]
+            label_name = SENTIMENT_MAP[label]
+            conf = item["confidence"]
+            text_preview = item["text"][:60] + ("..." if len(item["text"]) > 60 else "")
+            border_color = SENTIMENT_COLOR[label]
+            st.markdown(
+                f'<div class="history-item" style="border-left-color:{border_color}">'
+                f'{emoji} <b>{label_name}</b> <span style="color:#7c3aed;font-size:0.8rem">({conf:.1f}%)</span> — '
+                f'<span style="color:#4c1d95">{text_preview}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
 # ═══════════════════════════════════════════════════════════════════════
 # TAB 2: PHÂN TÍCH HÀNG LOẠT TỪ FILE
 # ═══════════════════════════════════════════════════════════════════════
 
 with tab_batch:
-    col_upload, col_info = st.columns([3, 2])
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("### 📁 Tải lên file dữ liệu")
+    uploaded_file = st.file_uploader(
+        "Chọn file CSV hoặc Excel",
+        type=["csv", "xlsx"],
+        help="File phải chứa cột văn bản đánh giá",
+        label_visibility="collapsed",
+    )
 
-    with col_upload:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("### 📁 Tải lên file dữ liệu")
-        uploaded_file = st.file_uploader(
-            "Chọn file CSV hoặc Excel",
-            type=["csv", "xlsx"],
-            help="File phải chứa cột văn bản đánh giá",
-            label_visibility="collapsed",
-        )
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file, encoding="utf-8-sig")
+            else:
+                df = pd.read_excel(uploaded_file)
+            st.success(f"✅ Đọc thành công: **{len(df):,} dòng**, {len(df.columns)} cột")
 
-        if uploaded_file is not None:
-            try:
-                if uploaded_file.name.endswith(".csv"):
-                    df = pd.read_csv(uploaded_file, encoding="utf-8-sig")
-                else:
-                    df = pd.read_excel(uploaded_file)
-                st.success(f"✅ Đọc thành công: **{len(df):,} dòng**, {len(df.columns)} cột")
-
+            col_sel, col_btn = st.columns([3, 1])
+            with col_sel:
                 text_col = st.selectbox(
                     "📝 Chọn cột văn bản",
                     options=df.columns.tolist(),
                     index=df.columns.tolist().index("Review") if "Review" in df.columns else 0,
                 )
-
-                aspect_cols = [c for c in ASPECT_COLS if c in df.columns]
-                if aspect_cols:
-                    st.info(f"📊 Phát hiện {len(aspect_cols)} cột khía cạnh: {', '.join(aspect_cols)}")
-
+            with col_btn:
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
                 analyze_batch_btn = st.button("🔍 Phân tích hàng loạt", key="batch", type="primary")
 
-            except Exception as e:
-                st.error(f"❌ Lỗi đọc file: {e}")
-                df = None
-                analyze_batch_btn = False
-        else:
+        except Exception as e:
+            st.error(f"❌ Lỗi đọc file: {e}")
             df = None
             analyze_batch_btn = False
-            st.markdown("""
-            <div class="empty-state">
-                <div class="empty-icon">📂</div>
-                <div class="empty-text">Kéo thả hoặc chọn file để bắt đầu</div>
-                <div style="font-size:0.8rem;color:#d1d5db;margin-top:0.3rem">Hỗ trợ CSV, Excel (.xlsx)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with col_info:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("### 📋 Hướng dẫn")
+    else:
+        df = None
+        analyze_batch_btn = False
         st.markdown("""
-        **4 bước đơn giản:**
-
-        1️⃣ Tải lên file CSV hoặc Excel  
-        2️⃣ Chọn cột chứa văn bản đánh giá  
-        3️⃣ Bấm **Phân tích hàng loạt**  
-        4️⃣ Xem kết quả và tải xuống  
-
-        ---
-        💡 **Mẹo:** File nên có cột `Review` chứa văn bản đánh giá tiếng Việt.
-        """)
-        st.markdown('</div>', unsafe_allow_html=True)
+        <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <div class="empty-text">Kéo thả hoặc chọn file để bắt đầu</div>
+            <div style="font-size:0.8rem;color:#a78bfa;margin-top:0.3rem">Hỗ trợ CSV, Excel (.xlsx) — Cần cột <b>Review</b></div>
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Phân tích batch
     if analyze_batch_btn and df is not None and text_col:
@@ -856,11 +947,11 @@ with tab_batch:
             pos_count = dist.get(1, 0) + dist.get(2, 0)
             st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#10b981">{pos_count:,}</div><div class="stat-label">Tích cực</div></div>', unsafe_allow_html=True)
         with stat_col3:
-            neu_count = dist.get(0, 0)
-            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#9ca3af">{neu_count:,}</div><div class="stat-label">Trung tính</div></div>', unsafe_allow_html=True)
+            neg_count = dist.get(0, 0)
+            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#ef4444">{neg_count:,}</div><div class="stat-label">Tiêu cực</div></div>', unsafe_allow_html=True)
         with stat_col4:
             avg_conf = np.mean([probas[i][preds[i]] for i in range(len(preds))]) * 100
-            st.markdown(f'<div class=\"stat-card\"><div class=\"stat-value\" style=\"color:#0d9488\">{avg_conf:.1f}%</div><div class=\"stat-label\">Độ tin cậy TB</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#7c3aed">{avg_conf:.1f}%</div><div class="stat-label">Độ tin cậy TB</div></div>', unsafe_allow_html=True)
 
         # Biểu đồ phân bố
         chart_col1, chart_col2 = st.columns(2)
@@ -872,7 +963,7 @@ with tab_batch:
                 "Cảm xúc": [SENTIMENT_MAP.get(k, str(k)) for k in sorted(dist.index)],
                 "Số lượng": [dist.get(k, 0) for k in sorted(dist.index)],
             })
-            st.bar_chart(dist_df.set_index("Cảm xúc"), height=300, color="#14b8a6")
+            st.bar_chart(dist_df.set_index("Cảm xúc"), height=300, color="#8b5cf6")
             st.markdown('</div>', unsafe_allow_html=True)
 
         with chart_col2:
@@ -924,36 +1015,6 @@ with tab_batch:
             )
 
 # ═══════════════════════════════════════════════════════════════════════
-# LỊCH SỬ PHÂN TÍCH
-# ═══════════════════════════════════════════════════════════════════════
-
-if st.session_state.history:
-    st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
-
-    hist_header_col, hist_clear_col = st.columns([5, 1])
-    with hist_header_col:
-        st.markdown("### 🕐 Lịch sử phân tích gần đây")
-    with hist_clear_col:
-        if st.button("🗑️ Xóa", key="clear_history"):
-            st.session_state.history = []
-            st.rerun()
-
-    for i, item in enumerate(st.session_state.history[:10]):
-        label = item["label"]
-        emoji = SENTIMENT_EMOJI[label]
-        label_name = SENTIMENT_MAP[label]
-        conf = item["confidence"]
-        text_preview = item["text"][:60] + ("..." if len(item["text"]) > 60 else "")
-        border_color = SENTIMENT_COLOR[label]
-        st.markdown(
-            f'<div class="history-item" style="border-left-color:{border_color}">'
-            f'{emoji} <b>{label_name}</b> <span style="color:#9ca3af;font-size:0.8rem">({conf:.1f}%)</span> — '
-            f'<span style="color:#6b7280">{text_preview}</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-
-# ═══════════════════════════════════════════════════════════════════════
 # FOOTER
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -961,6 +1022,6 @@ st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 st.markdown(
     '<div class="footer-text">'
     '👟 ShoeSenti AI — Phân tích cảm xúc đánh giá giày dép | '
-    'Đồ án Trí tuệ nhân tạo — Nhóm 14</div>',
+    'Bài tập cuối kỳ Trí tuệ nhân tạo — Nhóm 14</div>',
     unsafe_allow_html=True,
 )
