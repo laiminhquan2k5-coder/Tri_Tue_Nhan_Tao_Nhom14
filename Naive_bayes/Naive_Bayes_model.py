@@ -127,9 +127,10 @@ def train_naive_bayes(X_train, y_train, vectorizer_type="tfidf"):
     Returns:
         pipeline: Pipeline đã huấn luyện (vectorizer + classifier)
     """
-    # token_pattern giữ lại dấu câu quan trọng: , . ! ? ; : -
+    # token_pattern giữ lại dấu câu quan trọng: , . ! ? ; : - ( )
     # (do tiền xử lý mới đã giữ lại các dấu này)
-    token_pattern = r'(?u)\b\w[\w]*[\w,.!?;:\-]*\b|[,.!?;:\-]'
+    # Regex: match từ có thể chứa dấu câu ở cuối, HOẶC dấu câu đứng riêng
+    token_pattern = r'(?u)\w+[\w,.!?;:\-]*|[,.!?;:\-()]'
 
     if vectorizer_type == "tfidf":
         vectorizer = TfidfVectorizer(
