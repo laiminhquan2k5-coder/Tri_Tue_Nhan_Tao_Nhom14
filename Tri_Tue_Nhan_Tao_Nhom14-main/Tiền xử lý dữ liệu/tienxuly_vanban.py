@@ -129,7 +129,7 @@ TEENCODE_DICT = {
     r"\bđg\b": "đang",
     r"\bbth\b|\bbt\b": "bình thường",
     r"\bqá\b|\bqa\b": "quá",
-    r"\btks\b|\bthanks\b|\bthks\b|\btks\b": "cảm ơn",
+    r"\btks\b|\bthanks\b|\bthks\b": "cảm ơn",
     r"\bgiầy\b": "giày",
     r"\bđt\b": "đặt",
     # Bổ sung thêm teencode phổ biến
@@ -138,12 +138,10 @@ TEENCODE_DICT = {
     r"\bnv\b": "nhân viên",
     r"\bnt\b": "nhắn tin",
     r"\bnh\b": "nhé",
-    r"\btrj\b|\btrj\b": "trời",
+    r"\btrj\b": "trời",
     r"\bvj\b": "vì",
-    r"\bnma\b": "nhưng mà",
     r"\blun\b": "luôn",
     r"\bnhìu\b": "nhiều",
-    r"\bđc\b": "được",
     r"\btg\b": "thời gian",
     r"\bkb\b": "không bao giờ",
     r"\bkk\b": "không",
@@ -151,7 +149,6 @@ TEENCODE_DICT = {
     r"\bwá\b": "quá",
     r"\buj\b": "ừ",
     r"\brùi\b": "rồi",
-    r"\bđó\b": "đó",
 }
 
 # Ký tự tiếng Việt dùng cho regex rút gọn lặp
