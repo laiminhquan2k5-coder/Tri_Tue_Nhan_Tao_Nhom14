@@ -1,0 +1,7 @@
+# Bỏ qua các file trọng số mô hình
+*.pt
+*.pth
+*.bin
+
+# Bỏ qua thư mục cache của Python
+__pycache__/
