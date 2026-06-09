@@ -1067,7 +1067,7 @@ with tab_batch:
             ax.set_axisbelow(True)
             fig.patch.set_alpha(0)
             ax.set_facecolor('none')
-            st.pyplot(fig, use_container_width=True)
+            st.pyplot(fig, width="stretch")
             st.markdown('</div>', unsafe_allow_html=True)
 
         with chart_col2:
@@ -1094,7 +1094,7 @@ with tab_batch:
                       frameon=False, fontsize=9, labelcolor='#4c1d95')
             ax.set_aspect('equal')
             fig.patch.set_alpha(0)
-            st.pyplot(fig, use_container_width=True)
+            st.pyplot(fig, width="stretch")
             st.markdown('</div>', unsafe_allow_html=True)
 
         # Bảng kết quả
@@ -1102,7 +1102,7 @@ with tab_batch:
         st.markdown("### 📋 Bảng kết quả chi tiết")
         display_cols = [text_col, "Sentiment_Label", "Confidence"]
         display_cols = [c for c in display_cols if c in df_result.columns]
-        st.dataframe(df_result[display_cols].head(50), use_container_width=True, height=400)
+        st.dataframe(df_result[display_cols].head(50), width="stretch", height=400)
         st.markdown('</div>', unsafe_allow_html=True)
 
         # Tải xuống
