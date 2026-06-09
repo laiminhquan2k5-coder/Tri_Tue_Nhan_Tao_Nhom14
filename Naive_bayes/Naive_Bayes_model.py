@@ -5,7 +5,8 @@ NAIVE BAYES (BASELINE) — Phân tích cảm xúc đánh giá sản phẩm giày
 Mô hình Baseline sử dụng MultinomialNB với TfidfVectorizer / CountVectorizer.
 
 Dữ liệu đầu vào: Các file CSV đã tiền xử lý (Shoes_*_Preprocessed.csv)
-Nhãn cảm xúc tổng thể được tổng hợp từ 8 nhãn khía cạnh:
+Nhãn cảm xúc tổng thể được tổng hợp từ 8 nhãn khía cạnh
+(chỉ tính mean trên các khía cạnh có liên quan, bỏ qua giá trị -1):
   - -1: Không liên quan  →  None
   -  0: Tiêu cực          →  Negative
   -  1: Tích cực          →  Positive
@@ -23,7 +24,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import MultinomialNB, ComplementNB
+from sklearn.utils.class_weight import compute_sample_weight
+from sklearn.utils import resample
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -93,32 +96,61 @@ def create_overall_sentiment(df, aspect_cols=ASPECT_COLS):
       -  1 → Positive (Tích cực)
       -  2 → Neutral (Trung tính)
     
-    Nhãn tổng thể được tính bằng trung bình tất cả giá trị khía cạnh
-    (đã ánh xạ -1→0), sau đó rời rạc hóa:
-      - mean < 0.5  → -1 (None)
-      - mean < 1.5  → 0 (Negative)
-      - mean < 2.5  → 1 (Positive)
-      - mean >= 2.5 → 2 (Neutral)
+    Phương pháp: kết hợp quy tắc đa số và mean.
+    - Đếm số khía cạnh tích cực (giá trị 1 hoặc 2) và tiêu cực (giá trị 0)
+      trong các khía cạnh có liên quan (bỏ qua -1).
+    - Nếu không có khía cạnh liên quan → None.
+    - Nếu số tích cực > số tiêu cực → Positive.
+    - Nếu số tiêu cực > số tích cực → Negative.
+    - Nếu bằng nhau, dùng mean để phân biệt:
+      + mean >= 1.0 → Positive (nhiều khía cạnh trung tính + tích cực)
+      + mean < 0.5  → Negative (nhiều khía cạnh trung tính + tiêu cực)
+      + còn lại → Neutral
     """
     df = df.copy()
     
-    # Ánh xạ nội bộ để tính trung bình: -1→0, 0→1, 1→2, 2→3
-    MAPPING = {-1: 0, 0: 1, 1: 2, 2: 3}
+    # Chỉ xét các khía cạnh có liên quan (giá trị != -1)
+    relevant_mask = df[aspect_cols] != -1
+    relevant_count = relevant_mask.sum(axis=1)
     
-    mapped = df[aspect_cols].replace(MAPPING)
-    means = mapped.mean(axis=1)
+    # Đếm số khía cạnh tích cực (giá trị 1 hoặc 2) và tiêu cực (giá trị 0)
+    # trong các khía cạnh có liên quan
+    positive_count = ((df[aspect_cols] == 1) | (df[aspect_cols] == 2)).sum(axis=1)
+    negative_count = (df[aspect_cols] == 0).sum(axis=1)
     
-    def discretize(val):
-        if val < 0.5:
-            return -1  # None (Không liên quan)
-        elif val < 1.5:
-            return 0  # Negative
-        elif val < 2.5:
-            return 1  # Positive
+    # Mean chỉ trên các khía cạnh liên quan (bỏ qua -1)
+    relevant_sum = df[aspect_cols].where(relevant_mask).sum(axis=1)
+    relevant_mean = relevant_sum / relevant_count
+    
+    def discretize(row):
+        pos = row['pos']
+        neg = row['neg']
+        mean_val = row['mean']
+        count = row['count']
+        
+        if count == 0:
+            return -1  # None — không có khía cạnh nào liên quan
+        
+        # Quy tắc đa số: so sánh số tích cực vs tiêu cực
+        if pos > neg:
+            return 1  # Positive — nhiều khía cạnh tích cực hơn
+        elif neg > pos:
+            return 0  # Negative — nhiều khía cạnh tiêu cực hơn
         else:
-            return 2  # Neutral
+            # Bằng nhau: dùng mean để phân biệt
+            if mean_val >= 1.0:
+                return 1  # Positive — mean cao (nhiều giá trị 1 và 2)
+            elif mean_val < 0.5:
+                return 0  # Negative — mean thấp (nhiều giá trị 0)
+            else:
+                return 2  # Neutral — pha trộn
     
-    df["Sentiment"] = means.apply(discretize)
+    df['Sentiment'] = pd.DataFrame({
+        'pos': positive_count,
+        'neg': negative_count,
+        'mean': relevant_mean,
+        'count': relevant_count,
+    }).apply(discretize, axis=1)
     
     return df
 
@@ -127,28 +159,28 @@ def create_overall_sentiment(df, aspect_cols=ASPECT_COLS):
 # 3. TRÍCH XUẤT ĐẶC TRƯNG & HUẤN LUYỆN
 # ══════════════════════════════════════════════════════════════════════
 
-def train_naive_bayes(X_train, y_train, vectorizer_type="tfidf"):
+def train_naive_bayes(X_train, y_train, vectorizer_type="tfidf", classifier_type="multinomial", use_balanced=True):
     """
-    Huấn luyện mô hình MultinomialNB với Pipeline.
+    Huấn luyện mô hình Naive Bayes với Pipeline.
     
     Parameters:
         X_train: Series văn bản đã làm sạch
         y_train: Series nhãn cảm xúc
         vectorizer_type: "tfidf" hoặc "count"
+        classifier_type: "multinomial" hoặc "complement"
+        use_balanced: Có dùng sample_weight để cân bằng lớp hay không
     
     Returns:
         pipeline: Pipeline đã huấn luyện (vectorizer + classifier)
     """
     # token_pattern giữ lại dấu câu quan trọng: , . ! ? ; : - ( )
-    # (do tiền xử lý mới đã giữ lại các dấu này)
-    # Regex: match từ có thể chứa dấu câu ở cuối, HOẶC dấu câu đứng riêng
     token_pattern = r'(?u)\w+[\w,.!?;:\-]*|[,.!?;:\-()]'
 
     if vectorizer_type == "tfidf":
         vectorizer = TfidfVectorizer(
-            max_features=10000,
-            ngram_range=(1, 2),       # unigram + bigram
-            min_df=2,
+            max_features=15000,
+            ngram_range=(1, 2),
+            min_df=1,
             max_df=0.95,
             sublinear_tf=True,
             token_pattern=token_pattern,
@@ -156,21 +188,34 @@ def train_naive_bayes(X_train, y_train, vectorizer_type="tfidf"):
         vec_name = "TfidfVectorizer"
     else:
         vectorizer = CountVectorizer(
-            max_features=10000,
+            max_features=15000,
             ngram_range=(1, 2),
-            min_df=2,
+            min_df=1,
             max_df=0.95,
             token_pattern=token_pattern,
         )
         vec_name = "CountVectorizer"
     
+    if classifier_type == "complement":
+        classifier = ComplementNB(alpha=0.5, norm=True)
+        cls_name = "ComplementNB"
+    else:
+        classifier = MultinomialNB(alpha=0.5)
+        cls_name = "MultinomialNB"
+    
     pipeline = Pipeline([
         ("vectorizer", vectorizer),
-        ("classifier", MultinomialNB(alpha=1.0)),
+        ("classifier", classifier),
     ])
     
-    pipeline.fit(X_train, y_train)
-    print(f"  ✅ Huấn luyện xong với {vec_name}")
+    # Cân bằng lớp bằng sample_weight
+    if use_balanced:
+        sample_weight = compute_sample_weight("balanced", y_train)
+        pipeline.fit(X_train, y_train, classifier__sample_weight=sample_weight)
+    else:
+        pipeline.fit(X_train, y_train)
+    
+    print(f"  ✅ Huấn luyện xong với {vec_name} + {cls_name} (balanced={use_balanced})")
     
     return pipeline
 
@@ -516,6 +561,25 @@ def main():
     # Không gộp Train + Validate — giữ Validate riêng để phát hiện overfit
     df_train_full = df_train
 
+    # ── Oversampling lớp None (quá hiếm: chỉ ~0.1%) ──
+    # Nhân bản mẫu None lên ít nhất 5% tổng dữ liệu để mô hình học được
+    none_mask = df_train_full["Sentiment"] == -1
+    none_count = none_mask.sum()
+    total_count = len(df_train_full)
+    target_none = max(int(total_count * 0.05), 200)  # ít nhất 5% hoặc 200 mẫu
+    if none_count > 0 and none_count < target_none:
+        df_none = df_train_full[none_mask]
+        df_other = df_train_full[~none_mask]
+        df_none_upsampled = resample(
+            df_none,
+            replace=True,
+            n_samples=target_none - none_count,
+            random_state=42,
+        )
+        df_train_full = pd.concat([df_train_full, df_none_upsampled], ignore_index=True)
+        print(f"\n  🔄 Oversampling lớp None: {none_count} → {none_count + (target_none - none_count)} mẫu")
+        print(f"  📊 Tổng dữ liệu huấn luyện: {total_count} → {len(df_train_full)} mẫu")
+
     X_train = df_train_full["Review_Cleaned"].astype(str)
     y_train = df_train_full["Sentiment"].map(ENCODE_MAP)
     X_test = df_test["Review_Cleaned"].astype(str)
@@ -552,19 +616,33 @@ def main():
     
     all_results = []
     
-    # 3a. TfidfVectorizer + MultinomialNB
-    print(f"\n  🔹 Mô hình 1: TfidfVectorizer + MultinomialNB")
-    pipeline_tfidf = train_naive_bayes(X_train, y_train, vectorizer_type="tfidf")
+    # 3a. TfidfVectorizer + MultinomialNB (balanced)
+    print(f"\n  🔹 Mô hình 1: TfidfVectorizer + MultinomialNB (balanced)")
+    pipeline_tfidf = train_naive_bayes(X_train, y_train, vectorizer_type="tfidf", classifier_type="multinomial", use_balanced=True)
     results_tfidf = evaluate_model(pipeline_tfidf, X_test, y_test, model_name="TF-IDF + MultinomialNB")
     print_evaluation(results_tfidf)
     all_results.append(results_tfidf)
     
-    # 3b. CountVectorizer + MultinomialNB
-    print(f"\n  🔹 Mô hình 2: CountVectorizer + MultinomialNB")
-    pipeline_count = train_naive_bayes(X_train, y_train, vectorizer_type="count")
+    # 3b. CountVectorizer + MultinomialNB (balanced)
+    print(f"\n  🔹 Mô hình 2: CountVectorizer + MultinomialNB (balanced)")
+    pipeline_count = train_naive_bayes(X_train, y_train, vectorizer_type="count", classifier_type="multinomial", use_balanced=True)
     results_count = evaluate_model(pipeline_count, X_test, y_test, model_name="CountVec + MultinomialNB")
     print_evaluation(results_count)
     all_results.append(results_count)
+    
+    # 3c. TfidfVectorizer + ComplementNB (balanced)
+    print(f"\n  🔹 Mô hình 3: TfidfVectorizer + ComplementNB (balanced)")
+    pipeline_tfidf_comp = train_naive_bayes(X_train, y_train, vectorizer_type="tfidf", classifier_type="complement", use_balanced=True)
+    results_tfidf_comp = evaluate_model(pipeline_tfidf_comp, X_test, y_test, model_name="TF-IDF + ComplementNB")
+    print_evaluation(results_tfidf_comp)
+    all_results.append(results_tfidf_comp)
+    
+    # 3d. CountVectorizer + ComplementNB (balanced)
+    print(f"\n  🔹 Mô hình 4: CountVectorizer + ComplementNB (balanced)")
+    pipeline_count_comp = train_naive_bayes(X_train, y_train, vectorizer_type="count", classifier_type="complement", use_balanced=True)
+    results_count_comp = evaluate_model(pipeline_count_comp, X_test, y_test, model_name="CountVec + ComplementNB")
+    print_evaluation(results_count_comp)
+    all_results.append(results_count_comp)
     
     # ── Đánh giá trên tập Validate để phát hiện overfit ──────────────
     if X_validate is not None and y_validate is not None:
@@ -572,7 +650,7 @@ def main():
         print(f"  ║  🔍 ĐÁNH GIÁ OVERFIT TRÊN TẬP VALIDATE{' ' * (W - 44)}║")
         print(f"  ╚{'═' * W}╝")
         
-        for pipeline, name in [(pipeline_tfidf, "TF-IDF + MultinomialNB"), (pipeline_count, "CountVec + MultinomialNB")]:
+        for pipeline, name in [(pipeline_tfidf, "TF-IDF + MultinomialNB"), (pipeline_count, "CountVec + MultinomialNB"), (pipeline_tfidf_comp, "TF-IDF + ComplementNB"), (pipeline_count_comp, "CountVec + ComplementNB")]:
             val_pred = pipeline.predict(X_validate)
             val_acc = accuracy_score(y_validate, val_pred)
             val_f1 = f1_score(y_validate, val_pred, average="weighted", zero_division=0)
@@ -631,6 +709,8 @@ def main():
     
     save_model(pipeline_tfidf, "naive_bayes_tfidf")
     save_model(pipeline_count, "naive_bayes_countvec")
+    save_model(pipeline_tfidf_comp, "naive_bayes_tfidf_complement")
+    save_model(pipeline_count_comp, "naive_bayes_countvec_complement")
     
     # ── Bảng tổng kết ────────────────────────────────────────────────
     W = 70

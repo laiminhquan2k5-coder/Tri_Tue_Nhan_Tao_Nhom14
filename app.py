@@ -619,25 +619,81 @@ def preprocess_text(text):
 def load_model():
     """Load mô hình Naive Bayes đã huấn luyện."""
     model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Naive_bayes")
-    model_path = os.path.join(model_dir, "naive_bayes_countvec.pkl")
-    if not os.path.exists(model_path):
-        model_path = os.path.join(model_dir, "naive_bayes_tfidf.pkl")
-    if not os.path.exists(model_path):
-        return None
-    with open(model_path, "rb") as f:
-        pipeline = pickle.load(f)
-    return pipeline
+    # Ưu tiên mô hình CountVec + MultinomialNB (balanced) — tốt nhất (F1=0.8234)
+    model_candidates = [
+        "naive_bayes_countvec.pkl",            # CountVec + MultinomialNB (balanced) — BEST
+        "naive_bayes_tfidf.pkl",               # TF-IDF + MultinomialNB (balanced)
+        "naive_bayes_tfidf_complement.pkl",    # TF-IDF + ComplementNB
+        "naive_bayes_countvec_complement.pkl", # CountVec + ComplementNB
+    ]
+    for model_name in model_candidates:
+        model_path = os.path.join(model_dir, model_name)
+        if os.path.exists(model_path):
+            with open(model_path, "rb") as f:
+                pipeline = pickle.load(f)
+            return pipeline
+    return None
 
 
 # ═══════════════════════════════════════════════════════════════════════
 # HÀM TIỆN ÍCH
 # ═══════════════════════════════════════════════════════════════════════
 
+# ── Từ khóa liên quan đến giày dép ──
+# Chỉ dùng từ khóa đặc trưng cho review giày dép, tránh từ chung chung
+SHOE_KEYWORDS = [
+    "giày", "dép", "sandal", "boot", "sneaker", "tất", "vớ", "đế", "size",
+    "quai", "form", "đi chân", "đi vừa", "đi chật", "đi rộng", "chật chân",
+    "shop", "giao hàng", "vận chuyển", "đóng gói",
+    "đặt hàng", "đặt size", "mua hàng", "đáng tiền", "đáng mua",
+    "hài lòng", "thất vọng", "đi êm", "êm chân",
+]
+
+# ── Từ khóa cảm xúc rõ ràng ──
+SENTIMENT_KEYWORDS = {
+    "positive": ["đẹp", "tốt", "tuyệt", "hài lòng", "thích", "ổn", "êm", "rẻ", "nhanh", "xuất sắc",
+                 "chất lượng", "đáng", "cảm ơn", "ưng", "hài", "tốt", "giỏi", "thân thiện"],
+    "negative": ["xấu", "kém", "chậm", "hỏng", "tệ", "thất vọng", "dở", "đắt", "thiếu", "lỗi",
+                  "kém", "buồn", "bực", "tức", "phẫn nộ", "rác", "dỏm"],
+}
+
+
+def is_shoe_related(text):
+    """Kiểm tra xem văn bản có liên quan đến giày dép hay không."""
+    text_lower = text.lower()
+    return any(kw in text_lower for kw in SHOE_KEYWORDS)
+
+
+def has_clear_sentiment(text):
+    """Kiểm tra xem văn bản có chứa từ khóa cảm xúc rõ ràng hay không."""
+    text_lower = text.lower()
+    has_pos = any(kw in text_lower for kw in SENTIMENT_KEYWORDS["positive"])
+    has_neg = any(kw in text_lower for kw in SENTIMENT_KEYWORDS["negative"])
+    return has_pos or has_neg
+
+
 def predict_sentiment(pipeline, text):
     """Dự đoán cảm xúc cho 1 văn bản."""
     cleaned = preprocess_text(text)
     pred = pipeline.predict([cleaned])[0]
     proba = pipeline.predict_proba([cleaned])[0]
+
+    # Nếu văn bản không liên quan đến giày dép → None
+    if not is_shoe_related(text):
+        pred = 0  # None
+        boost = 0.85
+        proba = proba * (1 - boost)
+        proba[0] += boost
+    # Nếu văn bản có từ khóa giày nhưng không có cảm xúc rõ ràng
+    # và model không chắc chắn (xác suất cao nhất < 50%) → None
+    elif not has_clear_sentiment(text):
+        max_prob = max(proba)
+        if max_prob < 0.50:
+            pred = 0  # None
+            boost = 0.70
+            proba = proba * (1 - boost)
+            proba[0] += boost
+
     return pred, proba, cleaned
 
 
@@ -646,6 +702,20 @@ def predict_batch(pipeline, texts):
     cleaned = [preprocess_text(t) for t in texts]
     preds = pipeline.predict(cleaned)
     probas = pipeline.predict_proba(cleaned)
+    # Kiểm tra từng văn bản
+    for i, text in enumerate(texts):
+        if not is_shoe_related(text):
+            preds[i] = 0  # None
+            boost = 0.85
+            probas[i] = probas[i] * (1 - boost)
+            probas[i][0] += boost
+        elif not has_clear_sentiment(text):
+            max_prob = max(probas[i])
+            if max_prob < 0.50:
+                preds[i] = 0  # None
+                boost = 0.70
+                probas[i] = probas[i] * (1 - boost)
+                probas[i][0] += boost
     return preds, probas, cleaned
 
 
