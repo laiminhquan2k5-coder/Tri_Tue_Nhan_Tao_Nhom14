@@ -327,7 +327,6 @@ header {visibility: hidden;}
     margin: 0.2rem;
     letter-spacing: 0.3px;
 }
-.tag-none { background: #f5f5f5; color: #616161; border: 1px solid #9e9e9e; }
 .tag-negative { background: #fecaca; color: #991b1b; border: 1px solid #f87171; }
 .tag-positive { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
 .tag-neutral { background: #e0e7ff; color: #3730a3; border: 1px solid #818cf8; }
@@ -548,10 +547,11 @@ MODEL_PIPELINE_STEPS = [
 # HẰNG SỐ & CẤU HÌNH
 # ═══════════════════════════════════════════════════════════════════════
 
-SENTIMENT_MAP = {0: "None", 1: "Negative", 2: "Positive", 3: "Neutral"}
-SENTIMENT_EMOJI = {0: "🚫", 1: "😞", 2: "😊", 3: "😐"}
-SENTIMENT_COLOR = {0: "#9E9E9E", 1: "#ef4444", 2: "#10b981", 3: "#8b5cf6"}
-SENTIMENT_VN = {0: "Không liên quan", 1: "Tiêu cực", 2: "Tích cực", 3: "Trung tính"}
+# Heuristic: 3 lớp cảm xúc (loại bỏ nhãn -1/Không liên quan)
+SENTIMENT_MAP = {0: "Negative", 1: "Positive", 2: "Neutral"}
+SENTIMENT_EMOJI = {0: "😞", 1: "😊", 2: "😐"}
+SENTIMENT_COLOR = {0: "#ef4444", 1: "#10b981", 2: "#8b5cf6"}
+SENTIMENT_VN = {0: "Tiêu cực", 1: "Tích cực", 2: "Trung tính"}
 
 ASPECT_COLS = ["Price", "Shipping", "Outlook", "Quality", "Size", "Shop_Service", "General", "Others"]
 ASPECT_VN = {
@@ -691,49 +691,49 @@ def has_clear_sentiment(text):
 
 
 def predict_sentiment(pipeline, text):
-    """Dự đoán cảm xúc cho 1 văn bản."""
+    """Dự đoán cảm xúc cho 1 văn bản — Heuristic: chỉ 3 lớp (Positive, Negative, Neutral)."""
     cleaned = preprocess_text(text)
     pred = pipeline.predict([cleaned])[0]
     proba = pipeline.predict_proba([cleaned])[0]
 
-    # Nếu văn bản không liên quan đến giày dép → None
-    if not is_shoe_related(text):
-        pred = 0  # None
-        boost = 0.85
+    # Heuristic: Nếu văn bản không liên quan đến giày dép và không có cảm xúc rõ ràng → Neutral
+    if not is_shoe_related(text) and not has_clear_sentiment(text):
+        pred = 2  # Neutral — không liên quan và không cảm xúc
+        boost = 0.70
         proba = proba * (1 - boost)
-        proba[0] += boost
+        proba[2] += boost
     # Nếu văn bản có từ khóa giày nhưng không có cảm xúc rõ ràng
-    # và model không chắc chắn (xác suất cao nhất < 50%) → None
-    elif not has_clear_sentiment(text):
+    # và model không chắc chắn (xác suất cao nhất < 50%) → Neutral
+    elif is_shoe_related(text) and not has_clear_sentiment(text):
         max_prob = max(proba)
         if max_prob < 0.50:
-            pred = 0  # None
-            boost = 0.70
+            pred = 2  # Neutral
+            boost = 0.60
             proba = proba * (1 - boost)
-            proba[0] += boost
+            proba[2] += boost
 
     return pred, proba, cleaned
 
 
 def predict_batch(pipeline, texts):
-    """Dự đoán cảm xúc cho nhiều văn bản."""
+    """Dự đoán cảm xúc cho nhiều văn bản — Heuristic: chỉ 3 lớp."""
     cleaned = [preprocess_text(t) for t in texts]
     preds = pipeline.predict(cleaned)
     probas = pipeline.predict_proba(cleaned)
     # Kiểm tra từng văn bản
     for i, text in enumerate(texts):
-        if not is_shoe_related(text):
-            preds[i] = 0  # None
-            boost = 0.85
+        if not is_shoe_related(text) and not has_clear_sentiment(text):
+            preds[i] = 2  # Neutral — không liên quan và không cảm xúc
+            boost = 0.70
             probas[i] = probas[i] * (1 - boost)
-            probas[i][0] += boost
-        elif not has_clear_sentiment(text):
+            probas[i][2] += boost
+        elif is_shoe_related(text) and not has_clear_sentiment(text):
             max_prob = max(probas[i])
             if max_prob < 0.50:
-                preds[i] = 0  # None
-                boost = 0.70
+                preds[i] = 2  # Neutral
+                boost = 0.60
                 probas[i] = probas[i] * (1 - boost)
-                probas[i][0] += boost
+                probas[i][2] += boost
     return preds, probas, cleaned
 
 
@@ -808,7 +808,7 @@ with st.sidebar:
             st.markdown(model_desc)
 
     with st.expander("🏷️ Nhãn cảm xúc"):
-        for label_id in [0, 1, 2, 3]:
+        for label_id in [0, 1, 2]:
             name = SENTIMENT_MAP[label_id]
             vn = SENTIMENT_VN[label_id]
             emoji = SENTIMENT_EMOJI[label_id]
@@ -916,7 +916,7 @@ with tab_single:
         with res_col2:
             st.markdown('<div class="card">', unsafe_allow_html=True)
             st.markdown("### 📈 Xác suất từng lớp")
-            for i in [0, 1, 2, 3]:
+            for i in [0, 1, 2]:
                 lbl = SENTIMENT_MAP[i]
                 vn = SENTIMENT_VN[i]
                 emj = SENTIMENT_EMOJI[i]
@@ -1018,7 +1018,7 @@ with tab_batch:
             df_result["Sentiment_Label"] = [SENTIMENT_MAP[p] for p in preds]
             df_result["Confidence"] = [f"{probas[i][p]*100:.1f}%" for i, p in enumerate(preds)]
 
-            for i, label in enumerate([0, 1, 2, 3]):
+            for i, label in enumerate([0, 1, 2]):
                 df_result[f"Prob_{SENTIMENT_MAP[label]}"] = [f"{probas[j][i]*100:.1f}%" for j in range(len(preds))]
 
         # Thống kê
@@ -1032,14 +1032,14 @@ with tab_batch:
         with stat_col1:
             st.markdown(f'<div class="stat-card"><div class="stat-value">{total:,}</div><div class="stat-label">Tổng đánh giá</div></div>', unsafe_allow_html=True)
         with stat_col2:
-            pos_count = dist.get(2, 0) + dist.get(3, 0)
+            pos_count = dist.get(1, 0)
             st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#10b981">{pos_count:,}</div><div class="stat-label">Tích cực</div></div>', unsafe_allow_html=True)
         with stat_col3:
             neg_count = dist.get(0, 0)
             st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#ef4444">{neg_count:,}</div><div class="stat-label">Tiêu cực</div></div>', unsafe_allow_html=True)
         with stat_col4:
-            avg_conf = np.mean([probas[i][preds[i]] for i in range(len(preds))]) * 100
-            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#7c3aed">{avg_conf:.1f}%</div><div class="stat-label">Độ tin cậy TB</div></div>', unsafe_allow_html=True)
+            neu_count = dist.get(2, 0)
+            st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#8b5cf6">{neu_count:,}</div><div class="stat-label">Trung tính</div></div>', unsafe_allow_html=True)
 
         # Biểu đồ phân bố
         chart_col1, chart_col2 = st.columns(2)

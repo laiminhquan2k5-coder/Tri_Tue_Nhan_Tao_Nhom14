@@ -6,11 +6,13 @@ Mô hình Baseline sử dụng MultinomialNB với TfidfVectorizer / CountVector
 
 Dữ liệu đầu vào: Các file CSV đã tiền xử lý (Shoes_*_Preprocessed.csv)
 Nhãn cảm xúc tổng thể được tổng hợp từ 8 nhãn khía cạnh
-(chỉ tính mean trên các khía cạnh có liên quan, bỏ qua giá trị -1):
-  - -1: Không liên quan  →  None
+bằng phương pháp Heuristic (loại bỏ nhãn -1, chỉ giữ 3 lớp):
   -  0: Tiêu cực          →  Negative
   -  1: Tích cực          →  Positive
   -  2: Trung tính         →  Neutral
+
+Heuristic: Loại bỏ các dòng mà tất cả khía cạnh đều = -1 (không liên quan).
+Chỉ xét các khía cạnh có liên quan (giá trị != -1) để xác định cảm xúc.
 
 Độ đo đánh giá: Accuracy, Precision, Recall, F1-score, Confusion Matrix
 """
@@ -26,7 +28,6 @@ import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.utils.class_weight import compute_sample_weight
-from sklearn.utils import resample
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -54,14 +55,16 @@ PREPROCESSED_FILES = {
 
 ASPECT_COLS = ["Price", "Shipping", "Outlook", "Quality", "Size", "Shop_Service", "General", "Others"]
 
-# Nhãn cảm xúc tổng thể (4 lớp)
-SENTIMENT_MAP = {-1: "None", 0: "Negative", 1: "Positive", 2: "Neutral"}
-SENTIMENT_LABELS = ["None", "Negative", "Positive", "Neutral"]
+# Nhãn cảm xúc tổng thể (3 lớp — Heuristic: loại bỏ nhãn -1)
+SENTIMENT_MAP = {0: "Negative", 1: "Positive", 2: "Neutral"}
+SENTIMENT_LABELS = ["Negative", "Positive", "Neutral"]
 
 # Mã hóa nhãn cho sklearn (MultinomialNB yêu cầu nhãn không âm)
-ENCODE_MAP = {-1: 0, 0: 1, 1: 2, 2: 3}   # -1→0(None), 0→1(Negative), 1→2(Positive), 2→3(Neutral)
-DECODE_MAP = {0: -1, 1: 0, 2: 1, 3: 2}   # Giải mã ngược
-# Bản đồ nhãn đã mã hóa (0→None, 1→Negative, 2→Positive, 3→Neutral)
+# Heuristic: loại bỏ hoàn toàn nhãn -1 (Không liên quan)
+# Chỉ giữ 3 lớp: 0→Negative, 1→Positive, 2→Neutral
+ENCODE_MAP = {0: 0, 1: 1, 2: 2}   # 0→Negative, 1→Positive, 2→Neutral
+DECODE_MAP = {0: 0, 1: 1, 2: 2}   # Giải mã ngược (không đổi vì đã là 0,1,2)
+# Bản đồ nhãn đã mã hóa (0→Negative, 1→Positive, 2→Neutral)
 ENCODED_LABEL_MAP = {v: SENTIMENT_MAP[k] for k, v in ENCODE_MAP.items()}
 
 
@@ -88,30 +91,41 @@ def load_preprocessed_data():
 
 def create_overall_sentiment(df, aspect_cols=ASPECT_COLS):
     """
-    Tạo nhãn cảm xúc tổng thể từ 8 nhãn khía cạnh.
+    Tạo nhãn cảm xúc tổng thể từ 8 nhãn khía cạnh — PHƯƠNG PHÁP HEURISTIC.
     
-    Quy tắc (4 lớp):
-      - -1 → None (Không liên quan)
+    Quy tắc (3 lớp — loại bỏ nhãn -1):
       -  0 → Negative (Tiêu cực)
       -  1 → Positive (Tích cực)
       -  2 → Neutral (Trung tính)
     
-    Phương pháp: kết hợp quy tắc đa số và mean.
-    - Đếm số khía cạnh tích cực (giá trị 1 hoặc 2) và tiêu cực (giá trị 0)
-      trong các khía cạnh có liên quan (bỏ qua -1).
-    - Nếu không có khía cạnh liên quan → None.
-    - Nếu số tích cực > số tiêu cực → Positive.
-    - Nếu số tiêu cực > số tích cực → Negative.
-    - Nếu bằng nhau, dùng mean để phân biệt:
-      + mean >= 1.0 → Positive (nhiều khía cạnh trung tính + tích cực)
-      + mean < 0.5  → Negative (nhiều khía cạnh trung tính + tiêu cực)
-      + còn lại → Neutral
+    Phương pháp Heuristic:
+    1. Loại bỏ các dòng mà TẤT CẢ 8 khía cạnh đều = -1 (không liên quan).
+    2. Với các dòng còn lại, chỉ xét các khía cạnh có liên quan (giá trị != -1).
+    3. Quy tắc đa số + mean:
+       - Đếm số khía cạnh tích cực (giá trị 1 hoặc 2) và tiêu cực (giá trị 0)
+         trong các khía cạnh có liên quan (bỏ qua -1).
+       - Nếu số tích cực > số tiêu cực → Positive.
+       - Nếu số tiêu cực > số tích cực → Negative.
+       - Nếu bằng nhau, dùng mean để phân biệt:
+         + mean >= 1.0 → Positive (nhiều khía cạnh trung tính + tích cực)
+         + mean < 0.5  → Negative (nhiều khía cạnh trung tính + tiêu cực)
+         + còn lại → Neutral
     """
     df = df.copy()
     
     # Chỉ xét các khía cạnh có liên quan (giá trị != -1)
     relevant_mask = df[aspect_cols] != -1
     relevant_count = relevant_mask.sum(axis=1)
+    
+    # HEURISTIC: Loại bỏ các dòng mà tất cả khía cạnh đều = -1 (không liên quan)
+    all_irrelevant = relevant_count == 0
+    n_removed = all_irrelevant.sum()
+    if n_removed > 0:
+        print(f"  🔍 Heuristic: Loại bỏ {n_removed:,} dòng không có khía cạnh liên quan (tất cả = -1)")
+        df = df[~all_irrelevant].reset_index(drop=True)
+        # Cập nhật lại mask sau khi lọc
+        relevant_mask = df[aspect_cols] != -1
+        relevant_count = relevant_mask.sum(axis=1)
     
     # Đếm số khía cạnh tích cực (giá trị 1 hoặc 2) và tiêu cực (giá trị 0)
     # trong các khía cạnh có liên quan
@@ -128,9 +142,7 @@ def create_overall_sentiment(df, aspect_cols=ASPECT_COLS):
         mean_val = row['mean']
         count = row['count']
         
-        if count == 0:
-            return -1  # None — không có khía cạnh nào liên quan
-        
+        # Đã loại bỏ dòng all_irrelevant ở trên, nên count luôn > 0
         # Quy tắc đa số: so sánh số tích cực vs tiêu cực
         if pos > neg:
             return 1  # Positive — nhiều khía cạnh tích cực hơn
@@ -235,8 +247,8 @@ def evaluate_model(pipeline, X_test, y_test, model_name="Model"):
     prec = precision_score(y_test, y_pred, average="weighted", zero_division=0)
     rec = recall_score(y_test, y_pred, average="weighted", zero_division=0)
     f1 = f1_score(y_test, y_pred, average="weighted", zero_division=0)
-    cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2, 3])
-    # Encoded labels: 0=None, 1=Negative, 2=Positive, 3=Neutral
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2])
+    # Encoded labels: 0=Negative, 1=Positive, 2=Neutral
     report = classification_report(
         y_test, y_pred,
         target_names=SENTIMENT_LABELS,
@@ -410,7 +422,7 @@ def plot_sentiment_distribution(y_series, title, save_path=None):
     labels = [ENCODED_LABEL_MAP.get(k, str(k)) for k in counts.index]
     
     fig, ax = plt.subplots(figsize=(8, 5))
-    colors = ["#9E9E9E", "#EF4444", "#4CAF50", "#2196F3"]
+    colors = ["#EF4444", "#4CAF50", "#2196F3"]  # Negative, Positive, Neutral
     bars = ax.bar(labels, counts.values, color=colors[:len(labels)], edgecolor="white", linewidth=1.5)
     
     for bar, val in zip(bars, counts.values):
@@ -535,7 +547,7 @@ def main():
     print(f"  ║  🏷️ BƯỚC 2: TẠO NHÃN CẢM XÚC TỔNG THỂ{' ' * (W - 44)}║")
     print(f"  ╚{'═' * W}╝")
 
-    emoji_map = {"None": "🚫", "Negative": "😞", "Positive": "😊", "Neutral": "😐"}
+    emoji_map = {"Negative": "😞", "Positive": "😊", "Neutral": "😐"}
     for name, df in data.items():
         print(f"\n  📂 {name}:")
         data[name] = create_overall_sentiment(df)
@@ -561,24 +573,10 @@ def main():
     # Không gộp Train + Validate — giữ Validate riêng để phát hiện overfit
     df_train_full = df_train
 
-    # ── Oversampling lớp None (quá hiếm: chỉ ~0.1%) ──
-    # Nhân bản mẫu None lên ít nhất 5% tổng dữ liệu để mô hình học được
-    none_mask = df_train_full["Sentiment"] == -1
-    none_count = none_mask.sum()
-    total_count = len(df_train_full)
-    target_none = max(int(total_count * 0.05), 200)  # ít nhất 5% hoặc 200 mẫu
-    if none_count > 0 and none_count < target_none:
-        df_none = df_train_full[none_mask]
-        df_other = df_train_full[~none_mask]
-        df_none_upsampled = resample(
-            df_none,
-            replace=True,
-            n_samples=target_none - none_count,
-            random_state=42,
-        )
-        df_train_full = pd.concat([df_train_full, df_none_upsampled], ignore_index=True)
-        print(f"\n  🔄 Oversampling lớp None: {none_count} → {none_count + (target_none - none_count)} mẫu")
-        print(f"  📊 Tổng dữ liệu huấn luyện: {total_count} → {len(df_train_full)} mẫu")
+    # ── Heuristic: Đã loại bỏ nhãn -1 ở bước tạo nhãn ──
+    # Không cần oversampling lớp None vì đã loại bỏ hoàn toàn
+    # Chỉ còn 3 lớp: Negative (0), Positive (1), Neutral (2)
+    print(f"\n  ✅ Heuristic: Chỉ sử dụng 3 lớp: Negative, Positive, Neutral")
 
     X_train = df_train_full["Review_Cleaned"].astype(str)
     y_train = df_train_full["Sentiment"].map(ENCODE_MAP)
@@ -758,11 +756,10 @@ def main():
     for i, text in enumerate(demo_texts, 1):
         pred = best_pipeline.predict([text])[0]
         prob = best_pipeline.predict_proba([text])[0]
-        pred_original = DECODE_MAP.get(pred, pred)
-        label = SENTIMENT_MAP.get(pred_original, str(pred_original))
+        label = SENTIMENT_MAP.get(pred, str(pred))
 
         # Chọn emoji theo cảm xúc
-        emoji_map = {"None": "🚫", "Negative": "😞", "Positive": "😊", "Neutral": "😐"}
+        emoji_map = {"Negative": "😞", "Positive": "😊", "Neutral": "😐"}
         sent_emoji = emoji_map.get(label, "❓")
 
         print(f"\n  ┌{'─' * W}┐")
@@ -772,12 +769,10 @@ def main():
         print(f"  │")
         print(f"  │ 📊 Xác suất từng lớp:")
         for j, p in enumerate(prob):
-            j_original = DECODE_MAP.get(j, j)
-            if j_original in SENTIMENT_MAP:
-                cls_name = SENTIMENT_MAP[j_original]
-                bar_len = int(p * 30)
-                bar = "█" * bar_len + "░" * (30 - bar_len)
-                print(f"  │    {cls_name:<14} {bar} {p:>6.2%}")
+            cls_name = SENTIMENT_MAP.get(j, str(j))
+            bar_len = int(p * 30)
+            bar = "█" * bar_len + "░" * (30 - bar_len)
+            print(f"  │    {cls_name:<14} {bar} {p:>6.2%}")
         print(f"  └{'─' * W}┘")
 
 if __name__ == "__main__":
