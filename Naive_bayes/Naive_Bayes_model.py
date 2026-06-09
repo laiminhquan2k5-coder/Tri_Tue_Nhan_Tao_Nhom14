@@ -6,10 +6,10 @@ Mô hình Baseline sử dụng MultinomialNB với TfidfVectorizer / CountVector
 
 Dữ liệu đầu vào: Các file CSV đã tiền xử lý (Shoes_*_Preprocessed.csv)
 Nhãn cảm xúc tổng thể được tổng hợp từ 8 nhãn khía cạnh:
-  - -1: Tiêu cực        →  Negative
-  -  0: Trung tính       →  Neutral
-  -  1: Tích cực         →  Positive
-  -  2: Rất tích cực     →  Very Positive
+  - -1: Không liên quan  →  None
+  -  0: Tiêu cực          →  Negative
+  -  1: Tích cực          →  Positive
+  -  2: Trung tính         →  Neutral
 
 Độ đo đánh giá: Accuracy, Precision, Recall, F1-score, Confusion Matrix
 """
@@ -52,8 +52,14 @@ PREPROCESSED_FILES = {
 ASPECT_COLS = ["Price", "Shipping", "Outlook", "Quality", "Size", "Shop_Service", "General", "Others"]
 
 # Nhãn cảm xúc tổng thể (4 lớp)
-SENTIMENT_MAP = {0: "Negative", 1: "Neutral", 2: "Positive", 3: "Very Positive"}
-SENTIMENT_LABELS = ["Negative", "Neutral", "Positive", "Very Positive"]
+SENTIMENT_MAP = {-1: "None", 0: "Negative", 1: "Positive", 2: "Neutral"}
+SENTIMENT_LABELS = ["None", "Negative", "Positive", "Neutral"]
+
+# Mã hóa nhãn cho sklearn (MultinomialNB yêu cầu nhãn không âm)
+ENCODE_MAP = {-1: 0, 0: 1, 1: 2, 2: 3}   # -1→0(None), 0→1(Negative), 1→2(Positive), 2→3(Neutral)
+DECODE_MAP = {0: -1, 1: 0, 2: 1, 3: 2}   # Giải mã ngược
+# Bản đồ nhãn đã mã hóa (0→None, 1→Negative, 2→Positive, 3→Neutral)
+ENCODED_LABEL_MAP = {v: SENTIMENT_MAP[k] for k, v in ENCODE_MAP.items()}
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -81,36 +87,36 @@ def create_overall_sentiment(df, aspect_cols=ASPECT_COLS):
     """
     Tạo nhãn cảm xúc tổng thể từ 8 nhãn khía cạnh.
     
-    Quy tắc mới (4 lớp):
-      - -1 → 0 (Negative / Tiêu cực)
-      -  0 → 1 (Neutral / Trung tính)
-      -  1 → 2 (Positive / Tích cực)
-      -  2 → 3 (Very Positive / Rất tích cực)
+    Quy tắc (4 lớp):
+      - -1 → None (Không liên quan)
+      -  0 → Negative (Tiêu cực)
+      -  1 → Positive (Tích cực)
+      -  2 → Neutral (Trung tính)
     
     Nhãn tổng thể được tính bằng trung bình tất cả giá trị khía cạnh
     (đã ánh xạ -1→0), sau đó rời rạc hóa:
-      - mean < 0.3  → Negative
-      - mean < 0.6  → Neutral
-      - mean < 1.0  → Positive
-      - mean >= 1.0 → Very Positive
+      - mean < 0.5  → -1 (None)
+      - mean < 1.5  → 0 (Negative)
+      - mean < 2.5  → 1 (Positive)
+      - mean >= 2.5 → 2 (Neutral)
     """
     df = df.copy()
     
-    # Ánh xạ: -1→0(Negative), 0→1(Neutral), 1→2(Positive), 2→3(Very Positive)
+    # Ánh xạ nội bộ để tính trung bình: -1→0, 0→1, 1→2, 2→3
     MAPPING = {-1: 0, 0: 1, 1: 2, 2: 3}
     
     mapped = df[aspect_cols].replace(MAPPING)
     means = mapped.mean(axis=1)
     
     def discretize(val):
-        if val < 0.3:
+        if val < 0.5:
+            return -1  # None (Không liên quan)
+        elif val < 1.5:
             return 0  # Negative
-        elif val < 0.6:
-            return 1  # Neutral
-        elif val < 1.0:
-            return 2  # Positive
+        elif val < 2.5:
+            return 1  # Positive
         else:
-            return 3  # Very Positive
+            return 2  # Neutral
     
     df["Sentiment"] = means.apply(discretize)
     
@@ -185,6 +191,7 @@ def evaluate_model(pipeline, X_test, y_test, model_name="Model"):
     rec = recall_score(y_test, y_pred, average="weighted", zero_division=0)
     f1 = f1_score(y_test, y_pred, average="weighted", zero_division=0)
     cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2, 3])
+    # Encoded labels: 0=None, 1=Negative, 2=Positive, 3=Neutral
     report = classification_report(
         y_test, y_pred,
         target_names=SENTIMENT_LABELS,
@@ -355,10 +362,10 @@ def plot_metrics_comparison(all_results, save_path=None):
 def plot_sentiment_distribution(y_series, title, save_path=None):
     """Vẽ biểu đồ phân bố nhãn cảm xúc."""
     counts = y_series.value_counts().sort_index()
-    labels = [SENTIMENT_MAP.get(k, str(k)) for k in counts.index]
+    labels = [ENCODED_LABEL_MAP.get(k, str(k)) for k in counts.index]
     
     fig, ax = plt.subplots(figsize=(8, 5))
-    colors = ["#EF4444", "#9E9E9E", "#4CAF50", "#2196F3"]
+    colors = ["#9E9E9E", "#EF4444", "#4CAF50", "#2196F3"]
     bars = ax.bar(labels, counts.values, color=colors[:len(labels)], edgecolor="white", linewidth=1.5)
     
     for bar, val in zip(bars, counts.values):
@@ -483,7 +490,7 @@ def main():
     print(f"  ║  🏷️ BƯỚC 2: TẠO NHÃN CẢM XÚC TỔNG THỂ{' ' * (W - 44)}║")
     print(f"  ╚{'═' * W}╝")
 
-    emoji_map = {"Negative": "😞", "Neutral": "😐", "Positive": "😊", "Very Positive": "🤩"}
+    emoji_map = {"None": "🚫", "Negative": "😞", "Positive": "😊", "Neutral": "😐"}
     for name, df in data.items():
         print(f"\n  📂 {name}:")
         data[name] = create_overall_sentiment(df)
@@ -510,16 +517,16 @@ def main():
     df_train_full = df_train
 
     X_train = df_train_full["Review_Cleaned"].astype(str)
-    y_train = df_train_full["Sentiment"]
+    y_train = df_train_full["Sentiment"].map(ENCODE_MAP)
     X_test = df_test["Review_Cleaned"].astype(str)
-    y_test = df_test["Sentiment"]
+    y_test = df_test["Sentiment"].map(ENCODE_MAP)
 
     # Tập Validate dùng để đánh giá overfit
     X_validate = None
     y_validate = None
     if df_validate is not None:
         X_validate = df_validate["Review_Cleaned"].astype(str)
-        y_validate = df_validate["Sentiment"]
+        y_validate = df_validate["Sentiment"].map(ENCODE_MAP)
 
     print(f"\n  📊 Tập huấn luyện: {len(X_train):,} mẫu")
     print(f"  📊 Tập kiểm thử:   {len(X_test):,} mẫu")
@@ -671,10 +678,11 @@ def main():
     for i, text in enumerate(demo_texts, 1):
         pred = best_pipeline.predict([text])[0]
         prob = best_pipeline.predict_proba([text])[0]
-        label = SENTIMENT_MAP.get(pred, str(pred))
+        pred_original = DECODE_MAP.get(pred, pred)
+        label = SENTIMENT_MAP.get(pred_original, str(pred_original))
 
         # Chọn emoji theo cảm xúc
-        emoji_map = {"Negative": "😞", "Neutral": "😐", "Positive": "😊", "Very Positive": "🤩"}
+        emoji_map = {"None": "🚫", "Negative": "😞", "Positive": "😊", "Neutral": "😐"}
         sent_emoji = emoji_map.get(label, "❓")
 
         print(f"\n  ┌{'─' * W}┐")
@@ -684,8 +692,9 @@ def main():
         print(f"  │")
         print(f"  │ 📊 Xác suất từng lớp:")
         for j, p in enumerate(prob):
-            if j in SENTIMENT_MAP:
-                cls_name = SENTIMENT_MAP[j]
+            j_original = DECODE_MAP.get(j, j)
+            if j_original in SENTIMENT_MAP:
+                cls_name = SENTIMENT_MAP[j_original]
                 bar_len = int(p * 30)
                 bar = "█" * bar_len + "░" * (30 - bar_len)
                 print(f"  │    {cls_name:<14} {bar} {p:>6.2%}")

@@ -316,10 +316,10 @@ header {visibility: hidden;}
     margin: 0.2rem;
     letter-spacing: 0.3px;
 }
+.tag-none { background: #f5f5f5; color: #616161; border: 1px solid #9e9e9e; }
 .tag-negative { background: #fecaca; color: #991b1b; border: 1px solid #f87171; }
-.tag-neutral { background: #e0e7ff; color: #3730a3; border: 1px solid #818cf8; }
 .tag-positive { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
-.tag-very-positive { background: #ede9fe; color: #5b21b6; border: 1px solid #a78bfa; }
+.tag-neutral { background: #e0e7ff; color: #3730a3; border: 1px solid #818cf8; }
 
 /* ── History item ── */
 .history-item {
@@ -530,10 +530,10 @@ MODEL_PIPELINE_STEPS = [
 # HẰNG SỐ & CẤU HÌNH
 # ═══════════════════════════════════════════════════════════════════════
 
-SENTIMENT_MAP = {0: "Negative", 1: "Neutral", 2: "Positive", 3: "Very Positive"}
-SENTIMENT_EMOJI = {0: "😞", 1: "😐", 2: "😊", 3: "🤩"}
-SENTIMENT_COLOR = {0: "#ef4444", 1: "#8b5cf6", 2: "#10b981", 3: "#6366f1"}
-SENTIMENT_VN = {0: "Tiêu cực", 1: "Trung tính", 2: "Tích cực", 3: "Rất tích cực"}
+SENTIMENT_MAP = {0: "None", 1: "Negative", 2: "Positive", 3: "Neutral"}
+SENTIMENT_EMOJI = {0: "🚫", 1: "😞", 2: "😊", 3: "😐"}
+SENTIMENT_COLOR = {0: "#9E9E9E", 1: "#ef4444", 2: "#10b981", 3: "#8b5cf6"}
+SENTIMENT_VN = {0: "Không liên quan", 1: "Tiêu cực", 2: "Tích cực", 3: "Trung tính"}
 
 ASPECT_COLS = ["Price", "Shipping", "Outlook", "Quality", "Size", "Shop_Service", "General", "Others"]
 ASPECT_VN = {
@@ -944,10 +944,10 @@ with tab_batch:
         with stat_col1:
             st.markdown(f'<div class="stat-card"><div class="stat-value">{total:,}</div><div class="stat-label">Tổng đánh giá</div></div>', unsafe_allow_html=True)
         with stat_col2:
-            pos_count = dist.get(1, 0) + dist.get(2, 0)
+            pos_count = dist.get(2, 0)
             st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#10b981">{pos_count:,}</div><div class="stat-label">Tích cực</div></div>', unsafe_allow_html=True)
         with stat_col3:
-            neg_count = dist.get(0, 0)
+            neg_count = dist.get(1, 0)
             st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#ef4444">{neg_count:,}</div><div class="stat-label">Tiêu cực</div></div>', unsafe_allow_html=True)
         with stat_col4:
             avg_conf = np.mean([probas[i][preds[i]] for i in range(len(preds))]) * 100
