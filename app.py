@@ -39,6 +39,17 @@ html, body, [class*="stApp"] {
     background: #faf8ff !important;
 }
 
+/* ── Xoá nền đen Streamlit ── */
+[data-testid="stAppViewContainer"] {
+    background: #faf8ff !important;
+}
+section.main > div {
+    background: #faf8ff !important;
+}
+[data-testid="stVerticalBlock"] {
+    background: transparent !important;
+}
+
 /* ── Global text color ── */
 .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span {
     color: #3b0764 !important;
@@ -371,6 +382,13 @@ header {visibility: hidden;}
 }
 
 /* ── Text area ── */
+.stTextArea [data-testid="stTextAreaRootElement"] {
+    background: #faf5ff !important;
+    border-radius: 0.8rem !important;
+}
+.stTextArea [data-testid="stTextAreaRootElement"] > div {
+    background: #faf5ff !important;
+}
 .stTextArea textarea {
     border-radius: 0.8rem !important;
     border: 2px solid #ddd6fe !important;
@@ -1014,10 +1032,10 @@ with tab_batch:
         with stat_col1:
             st.markdown(f'<div class="stat-card"><div class="stat-value">{total:,}</div><div class="stat-label">Tổng đánh giá</div></div>', unsafe_allow_html=True)
         with stat_col2:
-            pos_count = dist.get(2, 0)
+            pos_count = dist.get(2, 0) + dist.get(3, 0)
             st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#10b981">{pos_count:,}</div><div class="stat-label">Tích cực</div></div>', unsafe_allow_html=True)
         with stat_col3:
-            neg_count = dist.get(1, 0)
+            neg_count = dist.get(0, 0)
             st.markdown(f'<div class="stat-card"><div class="stat-value" style="color:#ef4444">{neg_count:,}</div><div class="stat-label">Tiêu cực</div></div>', unsafe_allow_html=True)
         with stat_col4:
             avg_conf = np.mean([probas[i][preds[i]] for i in range(len(preds))]) * 100
@@ -1029,31 +1047,51 @@ with tab_batch:
         with chart_col1:
             st.markdown('<div class="card">', unsafe_allow_html=True)
             st.markdown("### 📊 Phân bố cảm xúc")
-            dist_df = pd.DataFrame({
-                "Cảm xúc": [SENTIMENT_MAP.get(k, str(k)) for k in sorted(dist.index)],
-                "Số lượng": [dist.get(k, 0) for k in sorted(dist.index)],
-            })
-            st.bar_chart(dist_df.set_index("Cảm xúc"), height=300, color="#8b5cf6")
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(figsize=(5, 3.5))
+            sorted_keys = sorted(dist.index)
+            bar_labels = [SENTIMENT_VN.get(k, str(k)) for k in sorted_keys]
+            bar_values = [dist.get(k, 0) for k in sorted_keys]
+            bar_colors = [SENTIMENT_COLOR[k] for k in sorted_keys]
+            bars = ax.bar(bar_labels, bar_values, color=bar_colors, edgecolor='white', linewidth=1.2, alpha=0.9)
+            for bar, val in zip(bars, bar_values):
+                ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(bar_values)*0.01,
+                        str(val), ha='center', va='bottom', fontweight='bold', fontsize=10, color='#4c1d95')
+            ax.set_ylabel('Số lượng', fontweight='bold', color='#6d28d9')
+            ax.tick_params(colors='#6d28d9')
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_color('#ddd6fe')
+            ax.spines['bottom'].set_color('#ddd6fe')
+            ax.yaxis.grid(True, alpha=0.3, color='#c4b5fd')
+            ax.set_axisbelow(True)
+            fig.patch.set_alpha(0)
+            ax.set_facecolor('none')
+            st.pyplot(fig, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
         with chart_col2:
             st.markdown('<div class="card">', unsafe_allow_html=True)
             st.markdown("### 🥧 Tỷ lệ cảm xúc")
-            # Pie chart using matplotlib
             import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(figsize=(4, 4))
-            labels_pie = [SENTIMENT_MAP.get(k, str(k)) for k in sorted(dist.index)]
+            fig, ax = plt.subplots(figsize=(4.5, 4.5))
+            labels_pie = [f"{SENTIMENT_EMOJI[k]} {SENTIMENT_VN[k]}" for k in sorted(dist.index)]
             sizes = [dist.get(k, 0) for k in sorted(dist.index)]
             colors_pie = [SENTIMENT_COLOR[k] for k in sorted(dist.index)]
+            explode = [0.03] * len(sizes)
             wedges, texts, autotexts = ax.pie(
-                sizes, labels=labels_pie, colors=colors_pie,
-                autopct='%1.1f%%', startangle=90,
-                textprops={'fontsize': 10, 'fontweight': 'bold'},
-                pctdistance=0.75,
+                sizes, labels=None, colors=colors_pie,
+                autopct='%1.1f%%', startangle=140,
+                explode=explode,
+                pctdistance=0.6,
+                wedgeprops={'edgecolor': 'white', 'linewidth': 2},
             )
             for autotext in autotexts:
                 autotext.set_color('white')
-                autotext.set_fontsize(9)
+                autotext.set_fontsize(10)
+                autotext.set_fontweight('bold')
+            ax.legend(wedges, labels_pie, loc='lower center', ncol=2,
+                      frameon=False, fontsize=9, labelcolor='#4c1d95')
             ax.set_aspect('equal')
             fig.patch.set_alpha(0)
             st.pyplot(fig, use_container_width=True)
