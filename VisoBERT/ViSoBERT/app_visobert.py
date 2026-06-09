@@ -332,7 +332,7 @@ with tab_batch:
                         st.pyplot(fig) 
 
                     st.markdown('<div class="card">### 📋 Bảng kết quả chi tiết</div>', unsafe_allow_html=True)
-                    st.dataframe(df_result[[text_col, "Sentiment_Label", "Confidence"] + [ASPECT_TRANSLATION[a] for a in ASPECTS]].head(50), use_container_width=True, height=400) 
+                    st.dataframe(df_result[[text_col, "Sentiment_Label", "Confidence"] + [ASPECT_TRANSLATION[a] for a in ASPECTS]].head(50), width=None, height=400) 
 
                     dl_col1, dl_col2 = st.columns(2)
                     with dl_col1: st.download_button("📥 Tải xuống CSV", to_csv(df_result), "visobert_results.csv", "text/csv", use_container_width=True) 
