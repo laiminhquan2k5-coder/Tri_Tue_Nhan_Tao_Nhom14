@@ -3,7 +3,11 @@ Phép đo độ đồng thuận Am (Agreement Measure) — Siegel & Castellan (1
 
 Đo mức độ đồng thuận giữa các nhãn gán trong bộ dữ liệu comment Shopee về giày.
 Bộ dữ liệu gồm 8 nhãn: Price, Shipping, Outlook, Quality, Size, Shop_Service, General, Others
-Mỗi nhãn có giá trị: -1 (không liên quan), 0 (trung tính), 1 (tích cực), 2 (rất tích cực)
+Mỗi nhãn có 4 giá trị cảm xúc:
+  - -1: Không liên quan (khía cạnh không xuất hiện trong comment)
+  -  0: Tiêu cực (nhận xét tiêu cực về khía cạnh đó)
+  -  1: Tích cực (nhận xét tích cực về khía cạnh đó)
+  -  2: Trung tính (nhận xét trung tính về khía cạnh đó)
 
 Công thức: Am = (Po - Pe) / (1 - Pe)
   - Po: xác suất đồng thuận quan sát (observed agreement)
@@ -126,10 +130,11 @@ def main():
     # ── Thông tin dữ liệu ──
     print(f"\n  PHÉP ĐO ĐỒNG THUẬN Am — Comment Shopee về giày\n")
     print(f"  Tổng: {len(df):,} comment, mỗi comment được gán 8 nhãn.")
-    print(f"  Giá trị gán: -1 = không liên quan  |  0 = trung tính  |  1 = tích cực  |  2 = rất tích cực")
+    print(f"  Giá trị gán: -1 = Không liên quan  |  0 = Tiêu cực  |  1 = Tích cực  |  2 = Trung tính")
     print()
-    print(f"  {'Nhãn':<14} {'Không liên quan':>15} {'Có nhãn':>8} {'Tỷ lệ có':>9}   Trung tính  Tích cực  Rất tích cực")
-    print(f"  {'─'*14} {'─'*15} {'─'*8} {'─'*9}   {'─'*11}  {'─'*8}  {'─'*12}")
+    print(f"  {'Nhãn':<14} {'Không liên quan':>15} {'Có nhãn':>8} {'Tỷ lệ có':>9}   Tiêu cực  Tích cực  Trung tính")
+    print(f"  {'─'*14} {'─'*15} {'─'*8} {'─'*9}   {'─'*9}  {'─'*8}  {'─'*11}")
+    total_neg, total_pos, total_neu = 0, 0, 0
     for col in LABEL_COLS:
         vals = df[col].values
         n_total = len(vals)
@@ -139,7 +144,13 @@ def main():
         pct = f"{n_rel/n_total*100:.1f}%"
         ct = Counter(relevant)
         v0, v1, v2 = ct.get(0, 0), ct.get(1, 0), ct.get(2, 0)
-        print(f"  {col:<14} {n_neg1:>15,} {n_rel:>8,} {pct:>9}   {v0:>11,}  {v1:>8,}  {v2:>12,}")
+        total_neg += v0
+        total_pos += v1
+        total_neu += v2
+        print(f"  {col:<14} {n_neg1:>15,} {n_rel:>8,} {pct:>9}   {v0:>9,}  {v1:>8,}  {v2:>11,}")
+    total_all = total_neg + total_pos + total_neu
+    print(f"  {'─'*14} {'─'*15} {'─'*8} {'─'*9}   {'─'*9}  {'─'*8}  {'─'*11}")
+    print(f"  {'Tổng cộng':<14} {'':>15} {total_all:>8,} {'':>9}   {total_neg:>9,}  {total_pos:>8,}  {total_neu:>11,}")
 
     # ── Kết quả Am ──
     print(f"\n  {'Nhãn':<14} {'Am':>7}  {'Bar':<25}  Diễn giải")
@@ -150,7 +161,9 @@ def main():
               else f"  {col:<14} {'N/A':>7}  {bar(am)}  {interpret(am)}")
 
     print(f"\n  Am tổng thể: {overall:.4f} ({interpret(overall)})")
-    print(f"  → Dữ liệu {'KHÔNG ĐỒNG THUẬN CAO' if overall < 0.4 else 'CÓ ĐỒNG THUẬN CAO'}\n")
+    print(f"  → Dữ liệu {'KHÔNG ĐỒNG THUẬN CAO' if overall < 0.4 else 'CÓ ĐỒNG THUẬN CAO'}")
+    print(f"\n  Ghi chú: Cột 'Others' chỉ có giá trị -1 và 2 (trung tính),")
+    print(f"  nên không thể tính Am (chỉ 1 category sau khi loại -1).\n")
 
 
 if __name__ == "__main__":

@@ -5,11 +5,14 @@ NAIVE BAYES (BASELINE) — Phân tích cảm xúc đánh giá sản phẩm giày
 Mô hình Baseline sử dụng MultinomialNB với TfidfVectorizer / CountVectorizer.
 
 Dữ liệu đầu vào: Các file CSV đã tiền xử lý (Shoes_*_Preprocessed.csv)
-Nhãn cảm xúc tổng thể được tổng hợp từ 8 nhãn khía cạnh:
-  - -1: Không liên quan  →  bỏ qua
-  -  0: Trung tính       →  Neutral
-  -  1: Tích cực         →  Positive
-  -  2: Rất tích cực     →  Very Positive
+Nhãn cảm xúc tổng thể được tổng hợp từ 8 nhãn khía cạnh
+bằng phương pháp Heuristic (loại bỏ nhãn -1, chỉ giữ 3 lớp):
+  -  0: Tiêu cực          →  Negative
+  -  1: Tích cực          →  Positive
+  -  2: Trung tính         →  Neutral
+
+Heuristic: Loại bỏ các dòng mà tất cả khía cạnh đều = -1 (không liên quan).
+Chỉ xét các khía cạnh có liên quan (giá trị != -1) để xác định cảm xúc.
 
 Độ đo đánh giá: Accuracy, Precision, Recall, F1-score, Confusion Matrix
 """
@@ -23,7 +26,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import MultinomialNB, ComplementNB
+from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -51,9 +55,17 @@ PREPROCESSED_FILES = {
 
 ASPECT_COLS = ["Price", "Shipping", "Outlook", "Quality", "Size", "Shop_Service", "General", "Others"]
 
-# Nhãn cảm xúc tổng thể
-SENTIMENT_MAP = {0: "Neutral", 1: "Positive", 2: "Very Positive"}
-SENTIMENT_LABELS = ["Neutral", "Positive", "Very Positive"]
+# Nhãn cảm xúc tổng thể (3 lớp — Heuristic: loại bỏ nhãn -1)
+SENTIMENT_MAP = {0: "Negative", 1: "Positive", 2: "Neutral"}
+SENTIMENT_LABELS = ["Negative", "Positive", "Neutral"]
+
+# Mã hóa nhãn cho sklearn (MultinomialNB yêu cầu nhãn không âm)
+# Heuristic: loại bỏ hoàn toàn nhãn -1 (Không liên quan)
+# Chỉ giữ 3 lớp: 0→Negative, 1→Positive, 2→Neutral
+ENCODE_MAP = {0: 0, 1: 1, 2: 2}   # 0→Negative, 1→Positive, 2→Neutral
+DECODE_MAP = {0: 0, 1: 1, 2: 2}   # Giải mã ngược (không đổi vì đã là 0,1,2)
+# Bản đồ nhãn đã mã hóa (0→Negative, 1→Positive, 2→Neutral)
+ENCODED_LABEL_MAP = {v: SENTIMENT_MAP[k] for k, v in ENCODE_MAP.items()}
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -79,34 +91,78 @@ def load_preprocessed_data():
 
 def create_overall_sentiment(df, aspect_cols=ASPECT_COLS):
     """
-    Tạo nhãn cảm xúc tổng thể từ 8 nhãn khía cạnh.
+    Tạo nhãn cảm xúc tổng thể từ 8 nhãn khía cạnh — PHƯƠNG PHÁP HEURISTIC.
     
-    Quy tắc: Lấy giá trị lớn nhất trong các nhãn có liên quan (≠ -1).
-      - max = 0 → Neutral
-      - max = 1 → Positive  
-      - max = 2 → Very Positive
+    Quy tắc (3 lớp — loại bỏ nhãn -1):
+      -  0 → Negative (Tiêu cực)
+      -  1 → Positive (Tích cực)
+      -  2 → Neutral (Trung tính)
     
-    Nếu tất cả nhãn đều -1 (không liên quan), đánh dấu là -1 và loại bỏ.
+    Phương pháp Heuristic:
+    1. Loại bỏ các dòng mà TẤT CẢ 8 khía cạnh đều = -1 (không liên quan).
+    2. Với các dòng còn lại, chỉ xét các khía cạnh có liên quan (giá trị != -1).
+    3. Quy tắc đa số + mean:
+       - Đếm số khía cạnh tích cực (giá trị 1 hoặc 2) và tiêu cực (giá trị 0)
+         trong các khía cạnh có liên quan (bỏ qua -1).
+       - Nếu số tích cực > số tiêu cực → Positive.
+       - Nếu số tiêu cực > số tích cực → Negative.
+       - Nếu bằng nhau, dùng mean để phân biệt:
+         + mean >= 1.0 → Positive (nhiều khía cạnh trung tính + tích cực)
+         + mean < 0.5  → Negative (nhiều khía cạnh trung tính + tiêu cực)
+         + còn lại → Neutral
     """
     df = df.copy()
     
-    # Lấy giá trị lớn nhất trong các cột khía cạnh (bỏ qua -1)
-    def get_max_sentiment(row):
-        relevant_vals = [v for v in row[aspect_cols].values if v != -1]
-        if not relevant_vals:
-            return -1  # không có nhãn liên quan
-        return max(relevant_vals)
+    # Chỉ xét các khía cạnh có liên quan (giá trị != -1)
+    relevant_mask = df[aspect_cols] != -1
+    relevant_count = relevant_mask.sum(axis=1)
     
-    df["Sentiment"] = df.apply(get_max_sentiment, axis=1)
-    
-    # Loại bỏ dòng không có nhãn liên quan
-    n_before = len(df)
-    df = df[df["Sentiment"] != -1].copy()
-    n_after = len(df)
-    n_removed = n_before - n_after
-    
+    # HEURISTIC: Loại bỏ các dòng mà tất cả khía cạnh đều = -1 (không liên quan)
+    all_irrelevant = relevant_count == 0
+    n_removed = all_irrelevant.sum()
     if n_removed > 0:
-        print(f"     Loại bỏ {n_removed} dòng không có nhãn liên quan (tất cả = -1)")
+        print(f"  🔍 Heuristic: Loại bỏ {n_removed:,} dòng không có khía cạnh liên quan (tất cả = -1)")
+        df = df[~all_irrelevant].reset_index(drop=True)
+        # Cập nhật lại mask sau khi lọc
+        relevant_mask = df[aspect_cols] != -1
+        relevant_count = relevant_mask.sum(axis=1)
+    
+    # Đếm số khía cạnh tích cực (giá trị 1 hoặc 2) và tiêu cực (giá trị 0)
+    # trong các khía cạnh có liên quan
+    positive_count = ((df[aspect_cols] == 1) | (df[aspect_cols] == 2)).sum(axis=1)
+    negative_count = (df[aspect_cols] == 0).sum(axis=1)
+    
+    # Mean chỉ trên các khía cạnh liên quan (bỏ qua -1)
+    relevant_sum = df[aspect_cols].where(relevant_mask).sum(axis=1)
+    relevant_mean = relevant_sum / relevant_count
+    
+    def discretize(row):
+        pos = row['pos']
+        neg = row['neg']
+        mean_val = row['mean']
+        count = row['count']
+        
+        # Đã loại bỏ dòng all_irrelevant ở trên, nên count luôn > 0
+        # Quy tắc đa số: so sánh số tích cực vs tiêu cực
+        if pos > neg:
+            return 1  # Positive — nhiều khía cạnh tích cực hơn
+        elif neg > pos:
+            return 0  # Negative — nhiều khía cạnh tiêu cực hơn
+        else:
+            # Bằng nhau: dùng mean để phân biệt
+            if mean_val >= 1.0:
+                return 1  # Positive — mean cao (nhiều giá trị 1 và 2)
+            elif mean_val < 0.5:
+                return 0  # Negative — mean thấp (nhiều giá trị 0)
+            else:
+                return 2  # Neutral — pha trộn
+    
+    df['Sentiment'] = pd.DataFrame({
+        'pos': positive_count,
+        'neg': negative_count,
+        'mean': relevant_mean,
+        'count': relevant_count,
+    }).apply(discretize, axis=1)
     
     return df
 
@@ -115,28 +171,28 @@ def create_overall_sentiment(df, aspect_cols=ASPECT_COLS):
 # 3. TRÍCH XUẤT ĐẶC TRƯNG & HUẤN LUYỆN
 # ══════════════════════════════════════════════════════════════════════
 
-def train_naive_bayes(X_train, y_train, vectorizer_type="tfidf"):
+def train_naive_bayes(X_train, y_train, vectorizer_type="tfidf", classifier_type="multinomial", use_balanced=True):
     """
-    Huấn luyện mô hình MultinomialNB với Pipeline.
+    Huấn luyện mô hình Naive Bayes với Pipeline.
     
     Parameters:
         X_train: Series văn bản đã làm sạch
         y_train: Series nhãn cảm xúc
         vectorizer_type: "tfidf" hoặc "count"
+        classifier_type: "multinomial" hoặc "complement"
+        use_balanced: Có dùng sample_weight để cân bằng lớp hay không
     
     Returns:
         pipeline: Pipeline đã huấn luyện (vectorizer + classifier)
     """
     # token_pattern giữ lại dấu câu quan trọng: , . ! ? ; : - ( )
-    # (do tiền xử lý mới đã giữ lại các dấu này)
-    # Regex: match từ có thể chứa dấu câu ở cuối, HOẶC dấu câu đứng riêng
     token_pattern = r'(?u)\w+[\w,.!?;:\-]*|[,.!?;:\-()]'
 
     if vectorizer_type == "tfidf":
         vectorizer = TfidfVectorizer(
-            max_features=10000,
-            ngram_range=(1, 2),       # unigram + bigram
-            min_df=2,
+            max_features=15000,
+            ngram_range=(1, 2),
+            min_df=1,
             max_df=0.95,
             sublinear_tf=True,
             token_pattern=token_pattern,
@@ -144,21 +200,34 @@ def train_naive_bayes(X_train, y_train, vectorizer_type="tfidf"):
         vec_name = "TfidfVectorizer"
     else:
         vectorizer = CountVectorizer(
-            max_features=10000,
+            max_features=15000,
             ngram_range=(1, 2),
-            min_df=2,
+            min_df=1,
             max_df=0.95,
             token_pattern=token_pattern,
         )
         vec_name = "CountVectorizer"
     
+    if classifier_type == "complement":
+        classifier = ComplementNB(alpha=0.5, norm=True)
+        cls_name = "ComplementNB"
+    else:
+        classifier = MultinomialNB(alpha=0.5)
+        cls_name = "MultinomialNB"
+    
     pipeline = Pipeline([
         ("vectorizer", vectorizer),
-        ("classifier", MultinomialNB(alpha=1.0)),
+        ("classifier", classifier),
     ])
     
-    pipeline.fit(X_train, y_train)
-    print(f"  ✅ Huấn luyện xong với {vec_name}")
+    # Cân bằng lớp bằng sample_weight
+    if use_balanced:
+        sample_weight = compute_sample_weight("balanced", y_train)
+        pipeline.fit(X_train, y_train, classifier__sample_weight=sample_weight)
+    else:
+        pipeline.fit(X_train, y_train)
+    
+    print(f"  ✅ Huấn luyện xong với {vec_name} + {cls_name} (balanced={use_balanced})")
     
     return pipeline
 
@@ -179,6 +248,7 @@ def evaluate_model(pipeline, X_test, y_test, model_name="Model"):
     rec = recall_score(y_test, y_pred, average="weighted", zero_division=0)
     f1 = f1_score(y_test, y_pred, average="weighted", zero_division=0)
     cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2])
+    # Encoded labels: 0=Negative, 1=Positive, 2=Neutral
     report = classification_report(
         y_test, y_pred,
         target_names=SENTIMENT_LABELS,
@@ -349,10 +419,10 @@ def plot_metrics_comparison(all_results, save_path=None):
 def plot_sentiment_distribution(y_series, title, save_path=None):
     """Vẽ biểu đồ phân bố nhãn cảm xúc."""
     counts = y_series.value_counts().sort_index()
-    labels = [SENTIMENT_MAP.get(k, str(k)) for k in counts.index]
+    labels = [ENCODED_LABEL_MAP.get(k, str(k)) for k in counts.index]
     
     fig, ax = plt.subplots(figsize=(8, 5))
-    colors = ["#9E9E9E", "#4CAF50", "#2196F3"]
+    colors = ["#EF4444", "#4CAF50", "#2196F3"]  # Negative, Positive, Neutral
     bars = ax.bar(labels, counts.values, color=colors[:len(labels)], edgecolor="white", linewidth=1.5)
     
     for bar, val in zip(bars, counts.values):
@@ -477,7 +547,7 @@ def main():
     print(f"  ║  🏷️ BƯỚC 2: TẠO NHÃN CẢM XÚC TỔNG THỂ{' ' * (W - 44)}║")
     print(f"  ╚{'═' * W}╝")
 
-    emoji_map = {"Neutral": "😐", "Positive": "😊", "Very Positive": "🤩"}
+    emoji_map = {"Negative": "😞", "Positive": "😊", "Neutral": "😐"}
     for name, df in data.items():
         print(f"\n  📂 {name}:")
         data[name] = create_overall_sentiment(df)
@@ -503,17 +573,22 @@ def main():
     # Không gộp Train + Validate — giữ Validate riêng để phát hiện overfit
     df_train_full = df_train
 
+    # ── Heuristic: Đã loại bỏ nhãn -1 ở bước tạo nhãn ──
+    # Không cần oversampling lớp None vì đã loại bỏ hoàn toàn
+    # Chỉ còn 3 lớp: Negative (0), Positive (1), Neutral (2)
+    print(f"\n  ✅ Heuristic: Chỉ sử dụng 3 lớp: Negative, Positive, Neutral")
+
     X_train = df_train_full["Review_Cleaned"].astype(str)
-    y_train = df_train_full["Sentiment"]
+    y_train = df_train_full["Sentiment"].map(ENCODE_MAP)
     X_test = df_test["Review_Cleaned"].astype(str)
-    y_test = df_test["Sentiment"]
+    y_test = df_test["Sentiment"].map(ENCODE_MAP)
 
     # Tập Validate dùng để đánh giá overfit
     X_validate = None
     y_validate = None
     if df_validate is not None:
         X_validate = df_validate["Review_Cleaned"].astype(str)
-        y_validate = df_validate["Sentiment"]
+        y_validate = df_validate["Sentiment"].map(ENCODE_MAP)
 
     print(f"\n  📊 Tập huấn luyện: {len(X_train):,} mẫu")
     print(f"  📊 Tập kiểm thử:   {len(X_test):,} mẫu")
@@ -539,19 +614,33 @@ def main():
     
     all_results = []
     
-    # 3a. TfidfVectorizer + MultinomialNB
-    print(f"\n  🔹 Mô hình 1: TfidfVectorizer + MultinomialNB")
-    pipeline_tfidf = train_naive_bayes(X_train, y_train, vectorizer_type="tfidf")
+    # 3a. TfidfVectorizer + MultinomialNB (balanced)
+    print(f"\n  🔹 Mô hình 1: TfidfVectorizer + MultinomialNB (balanced)")
+    pipeline_tfidf = train_naive_bayes(X_train, y_train, vectorizer_type="tfidf", classifier_type="multinomial", use_balanced=True)
     results_tfidf = evaluate_model(pipeline_tfidf, X_test, y_test, model_name="TF-IDF + MultinomialNB")
     print_evaluation(results_tfidf)
     all_results.append(results_tfidf)
     
-    # 3b. CountVectorizer + MultinomialNB
-    print(f"\n  🔹 Mô hình 2: CountVectorizer + MultinomialNB")
-    pipeline_count = train_naive_bayes(X_train, y_train, vectorizer_type="count")
+    # 3b. CountVectorizer + MultinomialNB (balanced)
+    print(f"\n  🔹 Mô hình 2: CountVectorizer + MultinomialNB (balanced)")
+    pipeline_count = train_naive_bayes(X_train, y_train, vectorizer_type="count", classifier_type="multinomial", use_balanced=True)
     results_count = evaluate_model(pipeline_count, X_test, y_test, model_name="CountVec + MultinomialNB")
     print_evaluation(results_count)
     all_results.append(results_count)
+    
+    # 3c. TfidfVectorizer + ComplementNB (balanced)
+    print(f"\n  🔹 Mô hình 3: TfidfVectorizer + ComplementNB (balanced)")
+    pipeline_tfidf_comp = train_naive_bayes(X_train, y_train, vectorizer_type="tfidf", classifier_type="complement", use_balanced=True)
+    results_tfidf_comp = evaluate_model(pipeline_tfidf_comp, X_test, y_test, model_name="TF-IDF + ComplementNB")
+    print_evaluation(results_tfidf_comp)
+    all_results.append(results_tfidf_comp)
+    
+    # 3d. CountVectorizer + ComplementNB (balanced)
+    print(f"\n  🔹 Mô hình 4: CountVectorizer + ComplementNB (balanced)")
+    pipeline_count_comp = train_naive_bayes(X_train, y_train, vectorizer_type="count", classifier_type="complement", use_balanced=True)
+    results_count_comp = evaluate_model(pipeline_count_comp, X_test, y_test, model_name="CountVec + ComplementNB")
+    print_evaluation(results_count_comp)
+    all_results.append(results_count_comp)
     
     # ── Đánh giá trên tập Validate để phát hiện overfit ──────────────
     if X_validate is not None and y_validate is not None:
@@ -559,7 +648,7 @@ def main():
         print(f"  ║  🔍 ĐÁNH GIÁ OVERFIT TRÊN TẬP VALIDATE{' ' * (W - 44)}║")
         print(f"  ╚{'═' * W}╝")
         
-        for pipeline, name in [(pipeline_tfidf, "TF-IDF + MultinomialNB"), (pipeline_count, "CountVec + MultinomialNB")]:
+        for pipeline, name in [(pipeline_tfidf, "TF-IDF + MultinomialNB"), (pipeline_count, "CountVec + MultinomialNB"), (pipeline_tfidf_comp, "TF-IDF + ComplementNB"), (pipeline_count_comp, "CountVec + ComplementNB")]:
             val_pred = pipeline.predict(X_validate)
             val_acc = accuracy_score(y_validate, val_pred)
             val_f1 = f1_score(y_validate, val_pred, average="weighted", zero_division=0)
@@ -618,6 +707,8 @@ def main():
     
     save_model(pipeline_tfidf, "naive_bayes_tfidf")
     save_model(pipeline_count, "naive_bayes_countvec")
+    save_model(pipeline_tfidf_comp, "naive_bayes_tfidf_complement")
+    save_model(pipeline_count_comp, "naive_bayes_countvec_complement")
     
     # ── Bảng tổng kết ────────────────────────────────────────────────
     W = 70
@@ -668,7 +759,7 @@ def main():
         label = SENTIMENT_MAP.get(pred, str(pred))
 
         # Chọn emoji theo cảm xúc
-        emoji_map = {"Neutral": "😐", "Positive": "😊", "Very Positive": "🤩"}
+        emoji_map = {"Negative": "😞", "Positive": "😊", "Neutral": "😐"}
         sent_emoji = emoji_map.get(label, "❓")
 
         print(f"\n  ┌{'─' * W}┐")
@@ -678,11 +769,10 @@ def main():
         print(f"  │")
         print(f"  │ 📊 Xác suất từng lớp:")
         for j, p in enumerate(prob):
-            if j in SENTIMENT_MAP:
-                cls_name = SENTIMENT_MAP[j]
-                bar_len = int(p * 30)
-                bar = "█" * bar_len + "░" * (30 - bar_len)
-                print(f"  │    {cls_name:<14} {bar} {p:>6.2%}")
+            cls_name = SENTIMENT_MAP.get(j, str(j))
+            bar_len = int(p * 30)
+            bar = "█" * bar_len + "░" * (30 - bar_len)
+            print(f"  │    {cls_name:<14} {bar} {p:>6.2%}")
         print(f"  └{'─' * W}┘")
 
 if __name__ == "__main__":
