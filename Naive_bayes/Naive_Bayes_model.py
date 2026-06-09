@@ -690,15 +690,16 @@ def main():
         save_path=os.path.join(MODEL_DIR, "metrics_comparison.png"),
     )
     
-    # Precision/Recall/F1 theo từng class cho mô hình tốt nhất
+    # Precision/Recall/F1 theo từng class cho TẤT CẢ các mô hình (ghi đè file cũ)
     best_result = max(all_results, key=lambda r: r["f1_score"])
     print(f"\n  🏆 Mô hình tốt nhất (F1): {best_result['model_name']} (F1 = {best_result['f1_score']:.4f})")
     
-    safe_best = best_result["model_name"].replace(" ", "_").replace("+", "plus")
-    plot_per_class_metrics(
-        best_result,
-        save_path=os.path.join(MODEL_DIR, f"per_class_metrics_{safe_best}.png"),
-    )
+    for r in all_results:
+        safe_name = r["model_name"].replace(" ", "_").replace("+", "plus")
+        plot_per_class_metrics(
+            r,
+            save_path=os.path.join(MODEL_DIR, f"per_class_metrics_{safe_name}.png"),
+        )
     
     # ── Bước 5: Lưu mô hình ──────────────────────────────────────────
     print(f"\n  ╔{'═' * W}╗")
