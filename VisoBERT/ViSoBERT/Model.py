@@ -388,5 +388,11 @@ def calculate_detailed_metrics(model, data_loader, device):
     plt.savefig('confusion_matrix.png', dpi=300)
     print("-> Đã lưu ảnh Ma trận nhầm lẫn vào file 'confusion_matrix.png'\n")
     plt.close()
+
+    # 4. Tính và hiển thị Độ chính xác tổng thể (Overall Accuracy)
+    overall_accuracy = accuracy_score(all_labels, all_preds) * 100
+    print("="*60)
+    print(f"ĐỘ CHÍNH XÁC TỔNG THỂ (Overall Accuracy): {overall_accuracy:.2f}%")
+    print("="*60 + "\n")
 if __name__ == "__main__":
     main()
